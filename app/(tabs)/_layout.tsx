@@ -1,16 +1,15 @@
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
+import { Redirect, SplashScreen, Stack } from "expo-router";
 import React, { useEffect } from "react";
+import { useAuth } from "../../src/context/AuthContext"; // <-- Add this import
 
 export default function Layout() {
-  
   const [fontsLoaded] = useFonts({
     "Gabarito": require("../../assets/fonts/Gabarito.ttf")
-  })
+  });
 
   useEffect(() => {
     if (fontsLoaded){
-      console.log("Fonts Loaded");
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
@@ -18,21 +17,20 @@ export default function Layout() {
   if (!fontsLoaded) return null;
 
   const {session} = useAuth();
-    return (
-        !session ? (
-            <Redirect href={"./login"}/>
-        ) : (
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                headerTintColor: '#fff',
-                headerTitleStyle: {
-                  fontWeight: 'bold',
-                },
-              }}>
-              {/* Optionally configure static options outside the route.*/}
-              <Stack.Screen name="home" options={{}} />
-            </Stack>
-        )
-    );
+  return (
+    !session ? (
+      <Redirect href={"./login"}/>
+    ) : (
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}>
+        <Stack.Screen name="home" options={{}} />
+      </Stack>
+    )
+  );
 }

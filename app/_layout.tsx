@@ -4,14 +4,12 @@ import { useEffect } from "react";
 import { AuthProvider } from "../src/context/AuthContext";
 
 export default function Layout() {
-  
   const [fontsLoaded] = useFonts({
     "Gabarito": require("../assets/fonts/Gabarito.ttf")
-  })
+  });
 
   useEffect(() => {
     if (fontsLoaded){
-      console.log("Fonts Loaded");
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
@@ -19,20 +17,17 @@ export default function Layout() {
   if (!fontsLoaded) return null;
 
   return (
-
-
     <AuthProvider>
-        <Stack
+      <Stack
         screenOptions={{
-            headerShown: false,
-            headerTintColor: '#fff',
-            headerTitleStyle: {
+          headerShown: false,
+          headerTintColor: '#fff',
+          headerTitleStyle: {
             fontWeight: 'bold',
-            },
+          },
         }}>
-        {/* Optionally configure static options outside the route.*/}
         <Stack.Screen name="registration" options={{}} />
-        </Stack>
+      </Stack>
     </AuthProvider>
   );
 }
