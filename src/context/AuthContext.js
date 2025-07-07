@@ -1,7 +1,7 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, Alert } from "react-native";
-import { account } from "../api/appwriteConfig";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { account } from "../api/appwriteConfig";
 
 const AuthContext = createContext();
 
@@ -21,15 +21,19 @@ const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
         setLoading(true);
         try {
-            const responseSession = await account.getSession('current');
-            setSession(responseSession);
-
-            const responseUser = await account.get();
-            setUser(responseUser);
+            const session = await account.getSession('current');
+            if (session) {
+                const user = await account.get();
+                setSession(session);
+                setUser(user);
+            } else {
+                setSession(null);
+                setUser(null);
+            }
         } catch (error) {
-            console.log(error);
             setSession(null);
             setUser(null);
+            // This error is expected if not logged in
         } finally {
             setLoading(false);
         }
@@ -92,3 +96,4 @@ const AuthProvider = ({ children }) => {
 const useAuth = () => {return useContext(AuthContext);}
 
 export { AuthContext, AuthProvider, useAuth };
+

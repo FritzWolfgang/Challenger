@@ -1,7 +1,8 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useAuth } from "../src/context/AuthContext"; 
 
 const styles = StyleSheet.create({
   title: {
@@ -53,59 +54,89 @@ const styles = StyleSheet.create({
   }
 });
 
+
 export default function Registration() {
+  console.log("Registration screen loaded");
+
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { signUp } = useAuth();
+
+  const handleSignUp = async () => {
+    try {
+      await signUp({ email, password, name: username });
+      router.push("/home");
+    } catch (err) {
+      const errorMessage = (err as { message?: string })?.message || "Bitte versuche es erneut.";
+      Alert.alert("Registrierung fehlgeschlagen", errorMessage);
+    }
+  };
+
   return (
     <LinearGradient
-      colors={["#711C71", "#5e3be1", "#b721ff"]} // blue and purple gradient
+      colors={["#711C71", "#5e3be1", "#b721ff"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
           {/* Title */}
-          <View style={[styles.container,{paddingTop: 80}]}>
+          <View style={[styles.container, { paddingTop: 80 }]}>
             <Text style={styles.title}>Sign in</Text>
           </View>
 
           {/* Username */}
           <View style={styles.container}>
             <Text style={styles.smallTextBlack}>Username</Text>
-            <TextInput style={styles.textInput} />
+            <TextInput
+              style={styles.textInput}
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
           </View>
 
           {/* Email */}
           <View style={styles.container}>
             <Text style={styles.smallTextBlack}>Email</Text>
-            <TextInput style={styles.textInput} />
+            <TextInput
+              style={styles.textInput}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
           </View>
 
           {/* Password */}
           <View style={styles.container}>
             <Text style={styles.smallTextBlack}>Password</Text>
-            <TextInput secureTextEntry={true} style={styles.textInput} />
+            <TextInput
+              secureTextEntry={true}
+              style={styles.textInput}
+              value={password}
+              onChangeText={setPassword}
+            />
           </View>
 
-          {/* Log In Button */}
+          {/* Sign Up Button */}
           <View style={styles.container}>
             <Pressable
               style={({ pressed }) => [
                 [styles.button],
                 pressed && { opacity: 0.5, shadowOpacity: 0.8 },
               ]}
-              onPress={() => {
-                //log in logic
-                router.push("/home")
-              }}
+              onPress={handleSignUp}
             >
               <Text style={styles.smallTextWhite}>Sign In Now</Text>
             </Pressable>
           </View>
           
-          {/* Sign In Text */}
+          {/* Log In Text */}
           <View style={styles.container}>
             <Pressable
               onPress={() => {
-                // CHANGE THIS TO SIGN IN PAGE
                 router.push("/");
               }}
             >
@@ -114,7 +145,6 @@ export default function Registration() {
               </Text>
             </Pressable>
           </View>    
-
         </ScrollView>
       </View>
     </LinearGradient>

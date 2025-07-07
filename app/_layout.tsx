@@ -25,9 +25,8 @@ export default function RootLayout() {
           headerTitleStyle: {
             fontWeight: 'bold',
           },
-        }}>
-        <Stack.Screen name="registration" options={{}} />
-      </Stack>
+        }}
+      />
     </AuthProvider>
   );
 }
