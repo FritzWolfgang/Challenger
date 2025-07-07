@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
-import { SplashScreen, Stack, Tabs } from "expo-router";
+import { useAuth } from "@/src/context/AuthContext";
 import { useFonts } from "expo-font";
+import { Redirect, SplashScreen, Stack } from "expo-router";
+import React, { useEffect } from "react";
 
 export default function Layout() {
   
@@ -18,20 +19,22 @@ export default function Layout() {
   
   if (!fontsLoaded) return null;
 
-  return (
-
-
-    
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      }}>
-      {/* Optionally configure static options outside the route.*/}
-      <Stack.Screen name="home" options={{}} />
-    </Stack>
-  );
+  const {session} = useAuth();
+    return (
+        !session ? (
+            <Redirect href={"./login"}/>
+        ) : (
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                headerTintColor: '#fff',
+                headerTitleStyle: {
+                  fontWeight: 'bold',
+                },
+              }}>
+              {/* Optionally configure static options outside the route.*/}
+              <Stack.Screen name="home" options={{}} />
+            </Stack>
+        )
+    );
 }

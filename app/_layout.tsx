@@ -1,7 +1,7 @@
-import { AuthProvider } from "@src/context/AuthProvider";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
+import { AuthProvider } from "../src/context/AuthContext";
 
 export default function Layout() {
   
