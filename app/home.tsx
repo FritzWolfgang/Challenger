@@ -70,6 +70,18 @@ export default function Index() {
           </Pressable>
       </View>
 
+      {/* Registration Button (not permanent) */}
+      <View style={styles.container}>
+        <Pressable style={({ pressed }: { pressed: boolean }) => [
+              [styles.button, {backgroundColor: "blue"}],
+              pressed && { opacity: 0.5, shadowOpacity: 0.8 }
+              ]}
+              onPress={() => router.push('/registration')}
+              >
+              <Text style={styles.smallText}>Registration</Text>
+          </Pressable>
+      </View>        
+
     </ScrollView>
   );
 }
