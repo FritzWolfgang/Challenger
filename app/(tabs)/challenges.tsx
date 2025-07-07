@@ -1,4 +1,5 @@
-import { StyleSheet } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const styles = StyleSheet.create({
   title: {
@@ -32,3 +33,31 @@ const styles = StyleSheet.create({
     lineHeight: 50,
   }
 });
+
+export default function Challenges() {
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+        
+        {/* Title */}
+        <View style={styles.container}>
+          <Text style={styles.title}>Challenges</Text>
+        </View>
+
+        
+
+      </ScrollView>
+
+      {/* Fixed Home Button */}
+      <Pressable
+        style={({ pressed }) => [
+          [styles.button, {backgroundColor: "red"}],
+          pressed && { opacity: 0.5, shadowOpacity: 0.8 }
+        ]}
+        onPress={() => router.push('/home')}
+      >
+        <Text style={styles.smallText}>Home</Text>
+      </Pressable>
+    </View>
+  );
+}
