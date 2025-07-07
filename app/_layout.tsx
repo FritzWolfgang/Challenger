@@ -6,7 +6,6 @@ import { AuthProvider } from "../src/context/AuthContext";
 export default function Layout() {
   
   const [fontsLoaded] = useFonts({
-    "SpaceMono-Regular": require("../assets/fonts/SpaceMono-Regular.ttf"),
     "Gabarito": require("../assets/fonts/Gabarito.ttf")
   })
 

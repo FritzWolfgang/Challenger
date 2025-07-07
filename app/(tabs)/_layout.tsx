@@ -1,13 +1,11 @@
-import { useAuth } from "@/src/context/AuthContext";
 import { useFonts } from "expo-font";
-import { Redirect, SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
 import React, { useEffect } from "react";
 
 export default function Layout() {
   
   const [fontsLoaded] = useFonts({
-    "SpaceMono-Regular": require("../assets/fonts/SpaceMono-Regular.ttf"),
-    "Gabarito": require("../assets/fonts/Gabarito.ttf")
+    "Gabarito": require("../../assets/fonts/Gabarito.ttf")
   })
 
   useEffect(() => {
