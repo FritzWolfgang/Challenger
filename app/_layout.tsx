@@ -3,7 +3,7 @@ import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
 import { AuthProvider } from "../src/context/AuthContext";
 
-export default function Layout() {
+export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     "Gabarito": require("../assets/fonts/Gabarito.ttf")
   });

@@ -50,10 +50,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     fontFamily: "Gabarito",
     fontSize: 20,
-  }
+  },
 });
 
-export default function Registration() {
+export default function Index() {
   return (
     <LinearGradient
       colors={["#711C71", "#5e3be1", "#b721ff"]} // blue and purple gradient

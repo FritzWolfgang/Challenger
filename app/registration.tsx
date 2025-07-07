@@ -59,7 +59,6 @@ export default function Registration() {
       colors={["#711C71", "#5e3be1", "#b721ff"]} // blue and purple gradient
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={{ flex: 1 }}
     >
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
@@ -107,7 +106,7 @@ export default function Registration() {
             <Pressable
               onPress={() => {
                 // CHANGE THIS TO SIGN IN PAGE
-                router.push("/login");
+                router.push("/");
               }}
             >
               <Text style={styles.smallTextBlack}>

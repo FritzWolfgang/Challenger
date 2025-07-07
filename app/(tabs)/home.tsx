@@ -1,6 +1,5 @@
 import { Text, View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { router } from 'expo-router';
-import { FlatList } from "react-native-gesture-handler";
 
 const styles = StyleSheet.create({
   title: {

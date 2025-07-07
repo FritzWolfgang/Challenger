@@ -1,9 +1,9 @@
 import { useFonts } from "expo-font";
-import { Redirect, SplashScreen, Stack } from "expo-router";
+import { Redirect, SplashScreen, Tabs } from "expo-router";
 import React, { useEffect } from "react";
 import { useAuth } from "../../src/context/AuthContext"; // <-- Add this import
 
-export default function Layout() {
+export default function TabLayout() {
   const [fontsLoaded] = useFonts({
     "Gabarito": require("../../assets/fonts/Gabarito.ttf")
   });
@@ -18,19 +18,18 @@ export default function Layout() {
 
   const {session} = useAuth();
   return (
-    !session ? (
-      <Redirect href={"./login"}/>
-    ) : (
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}>
-        <Stack.Screen name="home" options={{}} />
-      </Stack>
-    )
+  !session ? (
+    <Redirect href="./login" />
+  ) : (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        }}
+      }
+    />
+  )
   );
 }
