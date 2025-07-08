@@ -11,7 +11,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   button: {
-    position: 'absolute',  // <-- Fixes the button position
+    position: 'absolute',  
     bottom: 20,
     left: 20,
     width: 200,

@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { useAuth } from "../src/context/AuthContext"; 
+import { useAuth } from "../src/context/AuthContext";
 
 const styles = StyleSheet.create({
   title: {
@@ -68,7 +68,13 @@ export default function Registration() {
       await signUp({ email, password, name: username });
       router.push("/home");
     } catch (err) {
-      const errorMessage = (err as { message?: string })?.message || "Bitte versuche es erneut.";
+      console.log("Registration error:", err);
+      let errorMessage = "Bitte versuche es erneut.";
+      if (typeof err === "string") {
+        errorMessage = err;
+      } else if (err && typeof err === "object" && "message" in err) {
+        errorMessage = (err as any).message;
+      }
       Alert.alert("Registrierung fehlgeschlagen", errorMessage);
     }
   };
@@ -78,6 +84,7 @@ export default function Registration() {
       colors={["#711C71", "#5e3be1", "#b721ff"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
+      style={{ flex: 1 }} 
     >
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>

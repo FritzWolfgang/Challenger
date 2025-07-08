@@ -1,4 +1,4 @@
-import { Account, Client, Databases } from "appwrite";
+import { Account, Client, Databases } from "react-native-appwrite";
 
 const endpoint = "https://fra.cloud.appwrite.io/v1";
 const projectID = "686bd24c0020de1008b7";

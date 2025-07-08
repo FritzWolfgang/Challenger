@@ -64,7 +64,13 @@ export default function Index() {
       await signIn({ email, password });
       router.push("/home");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Bitte versuche es erneut.";
+      console.log("Login error:", err);
+      let errorMessage = "Bitte versuche es erneut.";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      }
       Alert.alert("Login fehlgeschlagen", errorMessage);
     }
   };
@@ -85,7 +91,7 @@ export default function Index() {
 
           {/* Email */}
           <View style={styles.container}>
-            <Text style={styles.smallTextBlack}>Email / Username</Text>
+              <Text style={styles.smallTextBlack}>Email</Text>
             <TextInput
               style={styles.textInput}
               value={email}
