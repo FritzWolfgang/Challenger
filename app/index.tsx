@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { useAuth } from "../src/context/AuthContext"; 
+import { useAuth } from "../src/context/AuthContext";
 
 const styles = StyleSheet.create({
   title: {
@@ -62,7 +62,7 @@ export default function Index() {
   const handleLogin = async () => {
     try {
       await signIn({ email, password });
-      router.push("/home");
+      router.replace("/home");
     } catch (err) {
       console.log("Login error:", err);
       let errorMessage = "Bitte versuche es erneut.";

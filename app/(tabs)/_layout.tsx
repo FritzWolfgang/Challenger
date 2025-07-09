@@ -19,7 +19,7 @@ export default function TabLayout() {
   const {session} = useAuth();
   return (
   !session ? (
-    <Redirect href="./login" />
+    <Redirect href="/" />
   ) : (
     <Tabs
       screenOptions={{
