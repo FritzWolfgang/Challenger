@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { useAuth } from "../src/context/AuthContext"; // <-- import useAuth
+import { useAuth } from "../src/context/AuthContext"; 
 
 const styles = StyleSheet.create({
   title: {
@@ -119,7 +119,7 @@ export default function Index() {
                 [styles.button],
                 pressed && { opacity: 0.5, shadowOpacity: 0.8 },
               ]}
-              onPress={handleLogin}
+              onPress={/*handleLogin*/()=>router.push("/home")}
             >
               <Text style={styles.smallTextWhite}>Log in</Text>
             </Pressable>
