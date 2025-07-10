@@ -227,9 +227,6 @@ export default function Challenges() {
             console.log("Selected participants:", selected);
           }}
           isOpen={openParticipantSearch}
-          onSelect={(selected) => {
-            setChosenObjects(selected);
-          }}
           style={[{ marginTop: 100 }]}
           title="Choose others"
         >
