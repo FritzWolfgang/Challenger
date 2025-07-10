@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   button: {
-    backgroundColor: "#0DC016",
+    backgroundColor: "#127DF8",
     width: 300,
     padding: 10,
     borderRadius: 10,
@@ -95,13 +95,11 @@ type UserType = {
 export default function Challenges() {
   const [challenges, setChallenges] = useState<ChallengeType[]>([]);
   const [openConfiguration, setOpenConfiguration] = useState(false);
-  const [modalName, setModalName] = useState("");
-  const [modalTotalReps, setModalTotalReps] = useState("");
+  const [challengeName, setChallengeName] = useState("");
+  const [challengeTotalReps, setChallengeTotalReps] = useState("");
   const [openParticipantSearch, setOpenParticipantSearch] = useState(false);
 
   const [users, setUsers] = useState<UserType[]>([]);
-
-  const [chosenObjects, setChosenObjects] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -118,20 +116,20 @@ export default function Challenges() {
   }, []);
 
   const createChallenge = () => {
-    if (!modalName || isNaN(Number(modalTotalReps))) return;
+    if (!challengeName || isNaN(Number(challengeTotalReps))) return;
 
     setChallenges((prev) => [
       ...prev,
       {
-        name: modalName,
-        totalReps: Number(modalTotalReps),
+        name: challengeName,
+        totalReps: Number(challengeTotalReps),
         completedReps: 0,
       },
+    
     ]);
 
-    // Reset modal and close
-    setModalName("");
-    setModalTotalReps("");
+    setChallengeName("");
+    setChallengeTotalReps("");
     setOpenConfiguration(false);
   };
 
@@ -195,12 +193,23 @@ export default function Challenges() {
             </Pressable>
 
             <Pressable
-              style={[styles.button, { backgroundColor: "red", marginTop: 30 }]}
+              style={[styles.button, { backgroundColor: "red", marginTop: 20 }]}
               onPress={() => {
                 setOpenConfiguration(false);
               }}
             >
               <Text style={styles.buttonText}>Cancel</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.button, { backgroundColor: "limegreen", marginTop: 20 }]}
+              onPress={() => {
+                setOpenConfiguration(false);
+                createChallenge()
+                
+              }}
+            >
+              <Text style={styles.buttonText}>Create</Text>
             </Pressable>
           </View>
         </Modal>
@@ -210,9 +219,6 @@ export default function Challenges() {
           onPressCancel={() => {
             setOpenParticipantSearch(false);
             setOpenConfiguration(true);
-          }}
-          onSelect={(selected) => {
-            setChosenObjects(selected);
           }}
           isOpen={openParticipantSearch}
           style={[{ marginTop: 100 }]}
