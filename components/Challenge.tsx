@@ -13,6 +13,7 @@ type ChallengeProps = {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
+    marginTop: 10,
   },
   progressBarSection: {
     borderWidth: 2,
