@@ -213,6 +213,7 @@ export default function Challenges() {
           }}
           onSelect={(selected) => {
             setChosenObjects(selected);
+            console.log("Selected participants:", selected);
           }}
           isOpen={openParticipantSearch}
           style={[{ marginTop: 100 }]}
