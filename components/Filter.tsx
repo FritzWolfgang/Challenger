@@ -1,22 +1,19 @@
-import { FontAwesome } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  KeyboardAvoidingView,
   ModalProps,
-  Modal as RNModal,
-  Platform,
-  Text,
-  View,
-  StyleSheet,
-  ScrollView,
   Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
+  View
 } from "react-native";
 import { Modal } from "./Modal";
 
 type Props = ModalProps & {
   isOpen: boolean;
   onPressCancel: () => void;
+  onSelect?: (selected: string[]) => void; // Optional callback for selected items
   objects: string[];
   title: string;
 };
@@ -26,6 +23,7 @@ export const Filter = ({
   onPressCancel,
   title,
   objects,
+  onSelect,
   children,
   ...rest
 }: Props) => {
@@ -85,10 +83,10 @@ export const Filter = ({
       <Pressable
         style={styles.selectButton}
         onPress={() => {
-          onPressCancel();
-          {
-            /* edit participants */
+          if (typeof onSelect === "function") {
+            onSelect(chosenObjects);
           }
+          onPressCancel();
         }}
       >
         <Text style={styles.selectText}>Select</Text>

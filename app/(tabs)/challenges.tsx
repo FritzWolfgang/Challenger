@@ -101,6 +101,8 @@ export default function Challenges() {
 
   const [users, setUsers] = useState<UserType[]>([]);
 
+  const [chosenObjects, setChosenObjects] = useState<string[]>([]);
+
   useEffect(() => {
     async function fetchUsers() {
       const { data, error } = await supabase.from("profiles").select("id, full_name");
@@ -208,6 +210,9 @@ export default function Challenges() {
           onPressCancel={() => {
             setOpenParticipantSearch(false);
             setOpenConfiguration(true);
+          }}
+          onSelect={(selected) => {
+            setChosenObjects(selected);
           }}
           isOpen={openParticipantSearch}
           style={[{ marginTop: 100 }]}
