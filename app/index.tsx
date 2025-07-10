@@ -1,8 +1,7 @@
 import { supabase } from "@/lib/supabase";
-import { Session } from "@supabase/supabase-js";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Pressable,

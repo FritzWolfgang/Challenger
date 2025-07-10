@@ -1,7 +1,11 @@
 import Challenge from "@/components/Challenge";
+import { Filter } from "@/components/Filter";
+import { Modal } from "@/components/Modal";
+import { supabase } from "@/lib/supabase";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -10,9 +14,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useState } from "react";
-import { Modal } from "@/components/Modal";
-import { Filter } from "@/components/Filter";
 
 const styles = StyleSheet.create({
   title: {
@@ -86,12 +87,33 @@ type ChallengeType = {
   completedReps: number;
 };
 
+type UserType = {
+  id: string;
+  name: string;
+}
+
 export default function Challenges() {
   const [challenges, setChallenges] = useState<ChallengeType[]>([]);
   const [openConfiguration, setOpenConfiguration] = useState(false);
   const [modalName, setModalName] = useState("");
   const [modalTotalReps, setModalTotalReps] = useState("");
   const [openParticipantSearch, setOpenParticipantSearch] = useState(false);
+
+  const [users, setUsers] = useState<UserType[]>([]);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      const { data, error } = await supabase.from("profiles").select("id, full_name");
+      if (!error && data) {
+        setUsers(
+          data
+            .filter((u: any) => !!u.full_name)
+            .map((u: any) => ({ id: u.id, name: u.full_name }))
+        );
+      }
+    }
+    fetchUsers();
+  }, []);
 
   const createChallenge = () => {
     if (!modalName || isNaN(Number(modalTotalReps))) return;
@@ -182,7 +204,7 @@ export default function Challenges() {
         </Modal>
 
         <Filter
-          objects={["hi", "hi 1", "bye 1", "bye 2", "bye 3", "bye 4"]}
+          objects={users.map((user) => user.name)}
           onPressCancel={() => {
             setOpenParticipantSearch(false);
             setOpenConfiguration(true);
