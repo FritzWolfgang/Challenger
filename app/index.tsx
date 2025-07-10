@@ -1,8 +1,17 @@
+import { supabase } from "@/lib/supabase";
+import { Session } from "@supabase/supabase-js";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { useAuth } from "../src/context/AuthContext";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 const styles = StyleSheet.create({
   title: {
@@ -42,8 +51,8 @@ const styles = StyleSheet.create({
   textInput: {
     width: 300,
     height: 50,
-    borderColor: "#000",   
-    borderWidth: 2,           
+    borderColor: "#000",
+    borderWidth: 2,
     borderRadius: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -57,21 +66,27 @@ const styles = StyleSheet.create({
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { signIn } = useAuth();
+
 
   const handleLogin = async () => {
     try {
-      await signIn({ email, password });
-      router.replace("/home");
-    } catch (err) {
-      console.log("Login error:", err);
-      let errorMessage = "Bitte versuche es erneut.";
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === "string") {
-        errorMessage = err;
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        Alert.alert("Login fehlgeschlagen!", error.message);
+      } else {
+        console.log("Login erfolgreich!");
+        router.replace("/(tabs)/home"); // <- redirect after login (see next section)
       }
-      Alert.alert("Login fehlgeschlagen", errorMessage);
+    } catch (err) {
+      if (err instanceof Error) {
+        Alert.alert("Unerwarteter Fehler!", err.message);
+      } else {
+        Alert.alert("Unerwarteter Fehler!", "Unknown error");
+      }
     }
   };
 
@@ -91,7 +106,7 @@ export default function Index() {
 
           {/* Email */}
           <View style={styles.container}>
-              <Text style={styles.smallTextBlack}>Email</Text>
+            <Text style={styles.smallTextBlack}>Email</Text>
             <TextInput
               style={styles.textInput}
               value={email}
@@ -119,12 +134,12 @@ export default function Index() {
                 [styles.button],
                 pressed && { opacity: 0.5, shadowOpacity: 0.8 },
               ]}
-              onPress={/*handleLogin*/()=>router.push("/home")}
+              onPress={handleLogin}
             >
               <Text style={styles.smallTextWhite}>Log in</Text>
             </Pressable>
           </View>
-          
+
           {/* Sign In Text */}
           <View style={styles.container}>
             <Pressable
@@ -133,10 +148,11 @@ export default function Index() {
               }}
             >
               <Text style={styles.smallTextBlack}>
-                New?{"\n"}<Text style={{ color: "#13A2F4" }}>Sign In</Text>
+                New?{"\n"}
+                <Text style={{ color: "#13A2F4" }}>Sign In</Text>
               </Text>
             </Pressable>
-          </View>    
+          </View>
         </ScrollView>
       </View>
     </LinearGradient>

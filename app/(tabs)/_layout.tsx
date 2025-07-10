@@ -1,35 +1,29 @@
 import { useFonts } from "expo-font";
-import { Redirect, SplashScreen, Tabs } from "expo-router";
-import React, { useEffect } from "react";
-import { useAuth } from "../../src/context/AuthContext"; // <-- Add this import
+import { SplashScreen, Tabs } from "expo-router";
+import { useEffect } from "react";
 
 export default function TabLayout() {
   const [fontsLoaded] = useFonts({
-    "Gabarito": require("../../assets/fonts/Gabarito.ttf")
+    Gabarito: require("../../assets/fonts/Gabarito.ttf"),
   });
 
   useEffect(() => {
-    if (fontsLoaded){
+    if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
-  
+
   if (!fontsLoaded) return null;
 
-  const {session} = useAuth();
   return (
-  !session ? (
-    <Redirect href="/" />
-  ) : (
     <Tabs
       screenOptions={{
         headerShown: false,
-        headerTintColor: '#fff',
+        headerTintColor: "#fff",
         headerTitleStyle: {
-          fontWeight: 'bold',
-        }}
-      }
+          fontWeight: "bold",
+        },
+      }}
     />
-  )
   );
 }
