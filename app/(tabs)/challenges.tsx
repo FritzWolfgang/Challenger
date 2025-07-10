@@ -99,6 +99,8 @@ export default function Challenges() {
   const [challengeTotalReps, setChallengeTotalReps] = useState("");
   const [openParticipantSearch, setOpenParticipantSearch] = useState(false);
 
+  const [chosenObjects, setChosenObjects] = useState<string[]>([]);
+
   const [users, setUsers] = useState<UserType[]>([]);
 
   useEffect(() => {
@@ -164,8 +166,8 @@ export default function Challenges() {
             <TextInput
               style={styles.input}
               placeholder="Challenge Name"
-              value={modalName}
-              onChangeText={setModalName}
+              value={challengeName}
+              onChangeText={setChallengeName}
             />
           </View>
 
@@ -173,8 +175,8 @@ export default function Challenges() {
             <TextInput
               style={styles.input}
               placeholder="Total Reps"
-              value={modalTotalReps}
-              onChangeText={setModalTotalReps}
+              value={challengeTotalReps}
+              onChangeText={setChallengeTotalReps}
               keyboardType="numeric"
             />
           </View>
@@ -221,6 +223,9 @@ export default function Challenges() {
             setOpenConfiguration(true);
           }}
           isOpen={openParticipantSearch}
+          onSelect={(selected) => {
+            setChosenObjects(selected);
+          }}
           style={[{ marginTop: 100 }]}
           title="Choose others"
         >
