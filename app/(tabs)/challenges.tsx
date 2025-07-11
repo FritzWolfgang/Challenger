@@ -39,6 +39,7 @@ export default function Challenges() {
   const [chosenObjects, setChosenObjects] = useState<string[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
   const [currentUser, setCurrentUser] = useState<User>();
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -175,7 +176,7 @@ export default function Challenges() {
       <View style={{ flex: 1 }}>
         <Text style={[styles.title]}>Challenges</Text>
 
-        <ScrollView style={{ marginTop: 20, paddingHorizontal: 20 }}>
+        <ScrollView style={{ marginTop: 20, paddingHorizontal: 20 }} onRefresh={loadChallenges} refreshing={refreshing}>
             {challenges.map((challenge, index) => {
               const progress = Math.min(
                 challenge.completedReps / challenge.totalReps,
@@ -254,14 +255,7 @@ export default function Challenges() {
                 setOpenConfiguration(false);
               }}
             >
-              <Text style={styles.buttonText}>Filter</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.button, { backgroundColor: "red", marginTop: 20 }]}
-              onPress={() => setOpenConfiguration(false)}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>Choose component(s)</Text>
             </Pressable>
 
             <Pressable
@@ -275,6 +269,13 @@ export default function Challenges() {
               }}
             >
               <Text style={styles.buttonText}>Create</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.button, { backgroundColor: "white", marginTop: 20, borderColor: "red", borderWidth: 2 }]}
+              onPress={() => setOpenConfiguration(false)}
+            >
+              <Text style={[styles.buttonText, {color: "red"}]}>Cancel</Text>
             </Pressable>
           </View>
         </Modal>
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 22,
     padding: 24,
-    marginBottom: 18,
+    marginTop: 18,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
@@ -439,7 +440,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: "100%",
-    backgroundColor: "#78F79E",
+    backgroundColor: "rgb(130 247 212)",
     borderRadius: 8,
   },
 });
