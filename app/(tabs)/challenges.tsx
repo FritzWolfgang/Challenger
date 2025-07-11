@@ -1,10 +1,4 @@
-import { Filter } from "@/components/Filter";
-import { Modal } from "@/components/Modal";
-import { supabase } from "@/lib/supabase";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { User } from "@supabase/supabase-js";
-import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect } from "expo-router";
+// React & React Native
 import { useCallback, useEffect, useState } from "react";
 import {
   Image,
@@ -13,109 +7,38 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
 } from "react-native";
 
+// Expo
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useFocusEffect } from "expo-router";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
-type ChallengeType = {
-  name: string;
-  totalReps: number;
-  completedReps: number;
-  participants: UserType[];
-};
+// Supabase
+import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
 
-type UserType = {
-  id: string;
-  name: string;
-  avatar_url?: string; // Optional avatar URL
-};
+// Components
+import ChallengeView from "@/components/ChallengeView";
+import { Filter } from "@/components/Filter";
+import { Modal } from "@/components/Modal";
+import { ChallengeType } from "@/types/ChallengeType";
+import { UserType } from "@/types/UserType";
+import { useChallenges } from "@/lib/useChallenges";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useUsers } from "@/lib/useUsers";
 
 export default function Challenges() {
-  const [challenges, setChallenges] = useState<ChallengeType[]>([]);
   const [openConfiguration, setOpenConfiguration] = useState(false);
   const [challengeName, setChallengeName] = useState("");
   const [challengeTotalReps, setChallengeTotalReps] = useState("");
   const [openParticipantSearch, setOpenParticipantSearch] = useState(false);
   const [chosenObjects, setChosenObjects] = useState<string[]>([]);
-  const [users, setUsers] = useState<UserType[]>([]);
-  const [currentUser, setCurrentUser] = useState<User>();
-  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchUsers();
-    fetchCurrentUser();
-    loadChallenges();
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadChallenges();
-    }, [])
-  );
-
-  const fetchUsers = async () => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url");
-
-    if (error) {
-      console.error("Error fetching users:", error);
-      return;
-    }
-
-    const validUsers = data
-      .filter((u) => !!u.full_name)
-      .map((u) => ({ id: u.id, name: u.full_name, avatar_url: u.avatar_url, }));
-
-    setUsers(validUsers);
-  };
-
-  const fetchCurrentUser = async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (!error && data.user) {
-      setCurrentUser(data.user);
-    } else {
-      console.error("Error getting current user:", error);
-    }
-  };
-
-  const loadChallenges = async () => {
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData?.user) {
-      console.error("Error fetching user:", userError);
-      return;
-    }
-
-    const userID = userData.user.id;
-
-    const { data, error } = await supabase
-      .from("challenges_progress")
-      .select("user_id, name, goal, progress, challenge_id");
-
-    if (error) {
-      console.error("Error fetching challenges:", error);
-      return;
-    }
-
-    const challengeData = (data || [])
-      .filter((entry) => entry.user_id === userID)
-      .map((entry) => {
-        // Finde alle Teilnehmer für diese Challenge
-        const participants = (data || [])
-          .filter((e) => e.challenge_id === entry.challenge_id)
-          .map((e) => users.find((u) => u.id === e.user_id))
-          .filter(Boolean) as UserType[];
-
-        return {
-          name: entry.name,
-          totalReps: entry.goal,
-          completedReps: entry.progress,
-          participants,
-        };
-      });
-
-    setChallenges(challengeData);
-  };
+  const { user: currentUser } = useCurrentUser();
+  const { challenges, refetchChallenges } = useChallenges(currentUser?.id);
+  const { users } = useUsers(currentUser?.id);
 
   const createChallenge = async () => {
     if (!challengeName || isNaN(Number(challengeTotalReps))) return;
@@ -163,7 +86,44 @@ export default function Challenges() {
     setChallengeName("");
     setChallengeTotalReps("");
     setOpenConfiguration(false);
-    loadChallenges();
+    await refetchChallenges();
+  };
+
+  const updateProgress = async (progressId: string, change: number) => {
+    if (!currentUser) return;
+
+    const { data: progressData, error } = await supabase
+      .from("challenges_progress")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .eq("id", progressId)
+      .single();
+
+    if (error || !progressData) {
+      console.error("Failed to fetch challenge progress:", error);
+      return;
+    }
+
+    const newProgress = Math.max(
+      0,
+      Math.min(progressData.progress + change, progressData.goal)
+    );
+
+    console.log(newProgress);
+
+    if (newProgress === progressData.progress) return;
+
+    const { error: updateError } = await supabase
+      .from("challenges_progress")
+      .update({ progress: newProgress })
+      .eq("id", progressData.id);
+
+    if (updateError) {
+      console.error("Failed to update progress:", updateError);
+      return;
+    }
+
+    await refetchChallenges();
   };
 
   return (
@@ -176,56 +136,9 @@ export default function Challenges() {
       <View style={{ flex: 1 }}>
         <Text style={[styles.title]}>Challenges</Text>
 
-        <ScrollView style={{ marginTop: 20, paddingHorizontal: 20 }} onRefresh={loadChallenges} refreshing={refreshing}>
-            {challenges.map((challenge, index) => {
-              const progress = Math.min(
-                challenge.completedReps / challenge.totalReps,
-                1
-              );
-              return (
-                <View style={styles.challengeCard} key={`${challenge.name}-${index}`}>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text style={styles.challengeTitle}>{challenge.name}</Text>
-                    <View style={{ flexDirection: "row", marginLeft: 10 }}>
-                      {challenge.participants?.map((user) =>
-                        user.avatar_url ? (
-                          <Image
-                            key={user.id}
-                            source={{ uri: user.avatar_url }}
-                            style={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: 16,
-                              marginLeft: -8,
-                              borderWidth: 2,
-                              marginBottom: 6,
-                              borderColor: "#fff",
-                              backgroundColor: "#eee",
-                            }}
-                          />
-                        ) : (
-                          null
-                        )
-                      )}
-                    </View>
-                  </View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 }}>
-                    <Text style={styles.challengeSubtitle}>
-                      {challenge.completedReps} / {challenge.totalReps}
-                    </Text>
-                    <View style={[styles.progressBarBackground, { flex: 1, marginTop: 0, marginBottom: 0 }]}>
-                      <View
-                        style={[
-                          styles.progressBarFill,
-                          { width: `${progress * 100}%` },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
+        <ScrollView style={{ marginTop: 20, paddingHorizontal: 20 }}>
+          <ChallengeView challenges={challenges}></ChallengeView>
+        </ScrollView>
 
         <Modal isOpen={openConfiguration} title="Create a Challenge">
           <View style={styles.container}>
@@ -272,10 +185,18 @@ export default function Challenges() {
             </Pressable>
 
             <Pressable
-              style={[styles.button, { backgroundColor: "white", marginTop: 20, borderColor: "red", borderWidth: 2 }]}
+              style={[
+                styles.button,
+                {
+                  backgroundColor: "white",
+                  marginTop: 20,
+                  borderColor: "red",
+                  borderWidth: 2,
+                },
+              ]}
               onPress={() => setOpenConfiguration(false)}
             >
-              <Text style={[styles.buttonText, {color: "red"}]}>Cancel</Text>
+              <Text style={[styles.buttonText, { color: "red" }]}>Cancel</Text>
             </Pressable>
           </View>
         </Modal>
@@ -338,32 +259,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
     width: "100%",
-  },
-  challengeCard: {
-    backgroundColor: "#fff",
-    borderRadius: 22,
-    padding: 24,
-    marginTop: 18,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-    borderWidth: 0,
-    width: "100%"
-  },
-  challengeTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#222",
-    marginBottom: 8,
-    fontFamily: "Gabarito",
-    marginRight: 10,
-  },
-  challengeSubtitle: {
-    fontSize: 16,
-    color: "#666",
-    fontFamily: "Gabarito",
   },
   input: {
     width: "90%",
@@ -430,17 +325,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
     shadowRadius: 8,
-  },
-  progressBarBackground: {
-    width: "100%",
-    height: 12,
-    backgroundColor: "#ececec",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "rgb(130 247 212)",
-    borderRadius: 8,
   },
 });
