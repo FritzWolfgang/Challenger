@@ -1,11 +1,4 @@
-import Challenge from "@/components/Challenge";
-import { Filter } from "@/components/Filter";
-import { Modal } from "@/components/Modal";
-import { supabase } from "@/lib/supabase";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { User } from "@supabase/supabase-js";
-import { LinearGradient } from "expo-linear-gradient";
-import { router, useFocusEffect } from "expo-router";
+// React & React Native
 import { useCallback, useEffect, useState } from "react";
 import {
   Pressable,
@@ -15,6 +8,25 @@ import {
   TextInput,
   View,
 } from "react-native";
+
+// Expo
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useFocusEffect } from "expo-router";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+
+// Supabase
+import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
+
+// Components
+import Challenge from "@/components/Challenge";
+import { Filter } from "@/components/Filter";
+import { Modal } from "@/components/Modal";
+import { ChallengeType } from "@/types/ChallengeType";
+import { UserType } from "@/types/UserType";
+import { useChallenges } from "@/lib/useChallenges";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useUsers } from "@/lib/useUsers";
 
 const styles = StyleSheet.create({
   title: {
@@ -83,93 +95,21 @@ const styles = StyleSheet.create({
   },
 });
 
-type ChallengeType = {
-  name: string;
-  totalReps: number;
-  completedReps: number;
-};
 
-type UserType = {
-  id: string;
-  name: string;
-};
 
 export default function Challenges() {
-  const [challenges, setChallenges] = useState<ChallengeType[]>([]);
   const [openConfiguration, setOpenConfiguration] = useState(false);
   const [challengeName, setChallengeName] = useState("");
   const [challengeTotalReps, setChallengeTotalReps] = useState("");
   const [openParticipantSearch, setOpenParticipantSearch] = useState(false);
   const [chosenObjects, setChosenObjects] = useState<string[]>([]);
-  const [users, setUsers] = useState<UserType[]>([]);
-  const [currentUser, setCurrentUser] = useState<User>();
 
-  useEffect(() => {
-    fetchUsers();
-    fetchCurrentUser();
-    loadChallenges();
-  }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadChallenges();
-    }, [])
-  );
 
-  const fetchUsers = async () => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, full_name");
+  const { user: currentUser } = useCurrentUser();
+  const { challenges, refetchChallenges } = useChallenges(currentUser?.id);
+  const { users } = useUsers(currentUser?.id);
 
-    if (error) {
-      console.error("Error fetching users:", error);
-      return;
-    }
-
-    const validUsers = data
-      .filter((u) => !!u.full_name)
-      .map((u) => ({ id: u.id, name: u.full_name }));
-
-    setUsers(validUsers);
-  };
-
-  const fetchCurrentUser = async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (!error && data.user) {
-      setCurrentUser(data.user);
-    } else {
-      console.error("Error getting current user:", error);
-    }
-  };
-
-  const loadChallenges = async () => {
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData?.user) {
-      console.error("Error fetching user:", userError);
-      return;
-    }
-
-    const userID = userData.user.id;
-
-    const { data, error } = await supabase
-      .from("challenges_progress")
-      .select("user_id, name, goal, progress");
-
-    if (error) {
-      console.error("Error fetching challenges:", error);
-      return;
-    }
-
-    const challengeData = (data || [])
-      .filter((entry) => entry.user_id === userID)
-      .map((entry) => ({
-        name: entry.name,
-        totalReps: entry.goal,
-        completedReps: entry.progress,
-      }));
-
-    setChallenges(challengeData);
-  };
 
   const createChallenge = async () => {
     if (!challengeName || isNaN(Number(challengeTotalReps))) return;
@@ -218,8 +158,47 @@ export default function Challenges() {
     setChallengeName("");
     setChallengeTotalReps("");
     setOpenConfiguration(false);
-    loadChallenges();
+    await refetchChallenges();
   };
+
+ const updateProgress = async (progressId: string, change: number) => {
+   if (!currentUser) return;
+
+   const { data: progressData, error } = await supabase
+     .from("challenges_progress")
+     .select("*")
+     .eq("user_id", currentUser.id)
+     .eq("id", progressId)
+     .single();
+
+   if (error || !progressData) {
+     console.error("Failed to fetch challenge progress:", error);
+     return;
+   }
+
+   const newProgress = Math.max(
+     0,
+     Math.min(progressData.progress + change, progressData.goal) // 👈 limit it here!
+   );
+   
+   console.log(newProgress)
+
+   if (newProgress === progressData.progress) return; // 👈 no update needed
+
+   const { error: updateError } = await supabase
+     .from("challenges_progress")
+     .update({ progress: newProgress })
+     .eq("id", progressData.id);
+
+   if (updateError) {
+     console.error("Failed to update progress:", updateError);
+     return;
+   }
+
+   await refetchChallenges();
+ };
+
+
 
   return (
     <LinearGradient
@@ -234,12 +213,14 @@ export default function Challenges() {
         </View>
 
         <ScrollView style={{ marginTop: 20, paddingHorizontal: 20 }}>
-          {challenges.map((challenge, index) => (
+          {challenges.map((challenge) => (
             <Challenge
-              key={`${challenge.name}-${index}`}
+              key={challenge.id}
               name={challenge.name}
               totalReps={challenge.totalReps}
               completedReps={challenge.completedReps}
+              onAdd={() => updateProgress(challenge.id, 1)}
+              onRemove={() => updateProgress(challenge.id, -1)}
             />
           ))}
         </ScrollView>

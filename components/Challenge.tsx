@@ -1,13 +1,14 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Pressable } from "react-native";
 
 type ChallengeProps = {
-  onPress?: () => void;
   name?: string;
   challenger?: string;
   participants?: string[];
   totalReps?: number;
   completedReps?: number;
+  onAdd?: () => void;
+  onRemove?: () => void;
 };
 
 const styles = StyleSheet.create({
@@ -42,23 +43,62 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#333",
     fontWeight: "bold",
-    fontFamily: "Gabarito"
+    fontFamily: "Gabarito",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    marginTop: 12,
+    gap: 20,
+  },
+  button: {
+    backgroundColor: "#127DF8",
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: "#fff",
+    fontFamily: "Gabarito",
+    fontSize: 16,
   },
 });
 
-const Challenge: React.FC<ChallengeProps> = ({ onPress, name = "", challenger, participants, totalReps = 0, completedReps = 0 }) => {
+const Challenge: React.FC<ChallengeProps> = ({
+  name = "",
+  challenger,
+  participants,
+  totalReps = 0,
+  completedReps = 0,
+  onAdd,
+  onRemove,
+}) => {
   const progress = Math.min(completedReps / totalReps, 1);
 
   return (
     <View style={styles.container}>
       <View style={styles.progressBarSection}>
-        <Text style={{ fontFamily: "Gabarito", fontSize: 30, color: "black" }}>{/* challenger profile picture */}{name}</Text>
+        <Text style={{ fontFamily: "Gabarito", fontSize: 30, color: "black" }}>
+          {name}
+        </Text>
+
         <View style={styles.progressBarBackground}>
-          <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+          <View
+            style={[styles.progressBarFill, { width: `${progress * 100}%` }]}
+          />
         </View>
+
         <Text style={styles.progressText}>
           {completedReps} / {totalReps} Wiederholungen
         </Text>
+
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.button} onPress={onRemove}>
+            <Text style={styles.buttonText}>-1</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={onAdd}>
+            <Text style={styles.buttonText}>+1</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
