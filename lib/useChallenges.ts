@@ -22,6 +22,7 @@ export function useChallenges(userId?: string) {
       name: c.name,
       totalReps: c.goal,
       completedReps: c.progress,
+      participants: c.participants,
     }));
     setChallenges(formatted);
   };

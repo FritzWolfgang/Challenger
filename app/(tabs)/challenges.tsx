@@ -1,6 +1,7 @@
 // React & React Native
 import { useCallback, useEffect, useState } from "react";
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,7 +20,7 @@ import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 
 // Components
-import Challenge from "@/components/Challenge";
+import ChallengeView from "@/components/ChallengeView";
 import { Filter } from "@/components/Filter";
 import { Modal } from "@/components/Modal";
 import { ChallengeType } from "@/types/ChallengeType";
@@ -28,75 +29,6 @@ import { useChallenges } from "@/lib/useChallenges";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useUsers } from "@/lib/useUsers";
 
-const styles = StyleSheet.create({
-  title: {
-    fontFamily: "Gabarito",
-    fontSize: 50,
-  },
-  container: {
-    marginVertical: 15,
-    alignItems: "center",
-  },
-  homeButton: {
-    position: "absolute",
-    top: 83,
-    left: 15,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 80,
-    borderColor: "black",
-    borderWidth: 2,
-  },
-  challengeButton: {
-    position: "absolute",
-    bottom: 10,
-    left: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    borderColor: "black",
-    borderWidth: 2,
-  },
-  defendButton: {
-    position: "absolute",
-    bottom: 10,
-    right: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    borderColor: "black",
-    borderWidth: 2,
-  },
-  input: {
-    width: 300,
-    height: 50,
-    borderColor: "#000",
-    borderWidth: 2,
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    fontFamily: "Gabarito",
-    fontSize: 20,
-    paddingHorizontal: 10,
-  },
-  button: {
-    backgroundColor: "#127DF8",
-    width: 300,
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 10,
-  },
-  buttonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-});
-
-
-
 export default function Challenges() {
   const [openConfiguration, setOpenConfiguration] = useState(false);
   const [challengeName, setChallengeName] = useState("");
@@ -104,18 +36,17 @@ export default function Challenges() {
   const [openParticipantSearch, setOpenParticipantSearch] = useState(false);
   const [chosenObjects, setChosenObjects] = useState<string[]>([]);
 
-
-
   const { user: currentUser } = useCurrentUser();
   const { challenges, refetchChallenges } = useChallenges(currentUser?.id);
   const { users } = useUsers(currentUser?.id);
-
 
   const createChallenge = async () => {
     if (!challengeName || isNaN(Number(challengeTotalReps))) return;
 
     const { data: creator, error: authError } = await supabase.auth.getUser();
     if (authError || !creator?.user) return;
+
+    const participantIds = users.map((user) => user.id);
 
     const { data: challengeData, error } = await supabase
       .from("challenges")
@@ -124,6 +55,7 @@ export default function Challenges() {
           name: challengeName,
           goal: Number(challengeTotalReps),
           creator: creator.user.id,
+          participants: participantIds,
         },
       ])
       .select()
@@ -134,11 +66,7 @@ export default function Challenges() {
       return;
     }
 
-    const selectedUsers = users.filter((user) =>
-      chosenObjects.includes(user.name)
-    );
-
-    for (const user of selectedUsers) {
+    for (const user of users) {
       const { error } = await supabase.from("challenges_progress").insert([
         {
           challenge_id: challengeData.id,
@@ -161,44 +89,42 @@ export default function Challenges() {
     await refetchChallenges();
   };
 
- const updateProgress = async (progressId: string, change: number) => {
-   if (!currentUser) return;
+  const updateProgress = async (progressId: string, change: number) => {
+    if (!currentUser) return;
 
-   const { data: progressData, error } = await supabase
-     .from("challenges_progress")
-     .select("*")
-     .eq("user_id", currentUser.id)
-     .eq("id", progressId)
-     .single();
+    const { data: progressData, error } = await supabase
+      .from("challenges_progress")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .eq("id", progressId)
+      .single();
 
-   if (error || !progressData) {
-     console.error("Failed to fetch challenge progress:", error);
-     return;
-   }
+    if (error || !progressData) {
+      console.error("Failed to fetch challenge progress:", error);
+      return;
+    }
 
-   const newProgress = Math.max(
-     0,
-     Math.min(progressData.progress + change, progressData.goal) // 👈 limit it here!
-   );
-   
-   console.log(newProgress)
+    const newProgress = Math.max(
+      0,
+      Math.min(progressData.progress + change, progressData.goal)
+    );
 
-   if (newProgress === progressData.progress) return; // 👈 no update needed
+    console.log(newProgress);
 
-   const { error: updateError } = await supabase
-     .from("challenges_progress")
-     .update({ progress: newProgress })
-     .eq("id", progressData.id);
+    if (newProgress === progressData.progress) return;
 
-   if (updateError) {
-     console.error("Failed to update progress:", updateError);
-     return;
-   }
+    const { error: updateError } = await supabase
+      .from("challenges_progress")
+      .update({ progress: newProgress })
+      .eq("id", progressData.id);
 
-   await refetchChallenges();
- };
+    if (updateError) {
+      console.error("Failed to update progress:", updateError);
+      return;
+    }
 
-
+    await refetchChallenges();
+  };
 
   return (
     <LinearGradient
@@ -208,21 +134,10 @@ export default function Challenges() {
       style={{ flex: 1 }}
     >
       <View style={{ flex: 1 }}>
-        <View style={styles.container}>
-          <Text style={[styles.title, { marginTop: 65 }]}>Challenges</Text>
-        </View>
+        <Text style={[styles.title]}>Challenges</Text>
 
         <ScrollView style={{ marginTop: 20, paddingHorizontal: 20 }}>
-          {challenges.map((challenge) => (
-            <Challenge
-              key={challenge.id}
-              name={challenge.name}
-              totalReps={challenge.totalReps}
-              completedReps={challenge.completedReps}
-              onAdd={() => updateProgress(challenge.id, 1)}
-              onRemove={() => updateProgress(challenge.id, -1)}
-            />
-          ))}
+          <ChallengeView challenges={challenges}></ChallengeView>
         </ScrollView>
 
         <Modal isOpen={openConfiguration} title="Create a Challenge">
@@ -253,14 +168,7 @@ export default function Challenges() {
                 setOpenConfiguration(false);
               }}
             >
-              <Text style={styles.buttonText}>Filter</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.button, { backgroundColor: "red", marginTop: 20 }]}
-              onPress={() => setOpenConfiguration(false)}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>Choose component(s)</Text>
             </Pressable>
 
             <Pressable
@@ -274,6 +182,21 @@ export default function Challenges() {
               }}
             >
               <Text style={styles.buttonText}>Create</Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.button,
+                {
+                  backgroundColor: "white",
+                  marginTop: 20,
+                  borderColor: "red",
+                  borderWidth: 2,
+                },
+              ]}
+              onPress={() => setOpenConfiguration(false)}
+            >
+              <Text style={[styles.buttonText, { color: "red" }]}>Cancel</Text>
             </Pressable>
           </View>
         </Modal>
@@ -295,13 +218,13 @@ export default function Challenges() {
           title="Choose others"
         />
 
-        <Feather
+        {/*<Feather
           name="home"
           size={35}
           color="black"
           onPress={() => router.push("/home")}
           style={styles.homeButton}
-        />
+        />*/}
 
         <MaterialCommunityIcons
           name="sword-cross"
@@ -321,3 +244,86 @@ export default function Challenges() {
     </LinearGradient>
   );
 }
+
+const styles = StyleSheet.create({
+  title: {
+    fontFamily: "Gabarito",
+    fontSize: 48,
+    marginTop: 80,
+    marginLeft: 20,
+    color: "#000000",
+    fontWeight: "bold",
+  },
+  container: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    width: "100%",
+  },
+  input: {
+    width: "90%",
+    height: 54,
+    borderColor: "#6a82fb",
+    borderWidth: 2,
+    borderRadius: 16,
+    backgroundColor: "#f7f7fa",
+    fontFamily: "Gabarito",
+    fontSize: 20,
+    paddingHorizontal: 18,
+    marginBottom: 10,
+    shadowColor: "#6a82fb",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  button: {
+    backgroundColor: "#6a82fb",
+    width: "90%",
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 10,
+    shadowColor: "#6a82fb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  buttonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 18,
+    letterSpacing: 1,
+    fontFamily: "Gabarito",
+  },
+  challengeButton: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    borderColor: "#6a82fb",
+    borderWidth: 2,
+    elevation: 4,
+    shadowColor: "#6a82fb",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+  },
+  defendButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    borderColor: "#fc5c7d",
+    borderWidth: 2,
+    elevation: 4,
+    shadowColor: "#fc5c7d",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+  },
+});
