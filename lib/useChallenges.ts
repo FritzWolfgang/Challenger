@@ -37,8 +37,8 @@ export function useChallenges(userId?: string) {
 
     // Fetch users info in one batch
     const { data: usersData, error: usersError } = await supabase
-      .from("users")
-      .select("id, display_name")
+      .from("profiles")
+      .select("id, full_name")
       .in("id", Array.from(participantIds));
 
     if (usersError) {
@@ -46,31 +46,39 @@ export function useChallenges(userId?: string) {
       return;
     }
 
-    const usersMap = new Map(usersData.map((u) => [u.id, u]));
+    const usersMap = new Map(
+      usersData
+        .filter((u) => u.full_name) // Remove invalid names
+        .map((u) => [u.id, { ...u, name: u.full_name }])
+    );
 
     const progressMap = new Map(
       (progressData ?? []).map((p) => [p.challenge_id, p])
     );
 
-    const formatted = (challengesData ?? []).map((challenge) => {
-      const progress = progressMap.get(challenge.id);
-      const fullParticipants = (challenge.participants ?? [])
-        .map((id: string) => usersMap.get(id))
-        .filter(Boolean);
+    const formatted = (challengesData ?? [])
+      .filter((challenge) => {
+        const progress = progressMap.get(challenge.id);
+        return progress && challenge.participants?.includes(userId);
+      })
+      .map((challenge) => {
+        const progress = progressMap.get(challenge.id);
+        const fullParticipants = (challenge.participants ?? [])
+          .map((id: string) => usersMap.get(id))
+          .filter(Boolean);
 
-      return {
-        id: challenge.id,
-        name: challenge.name,
-        goal: challenge.goal,
-        progression: progress ? progress.progress : 0,
-        participants: fullParticipants,
-        progressId: progress ? progress.id : null,
-      };
-    });
+        return {
+          id: challenge.id,
+          name: challenge.name,
+          goal: challenge.goal,
+          progression: progress ? progress.progress : 0,
+          participants: fullParticipants,
+          progressId: progress ? progress.id : null,
+        };
+      });
 
     setChallenges(formatted);
   };
-
 
   useEffect(() => {
     loadChallenges();
@@ -111,7 +119,7 @@ export function useChallenges(userId?: string) {
           loadChallenges();
         }
       )
-      .subscribe();  
+      .subscribe();
     return () => {
       supabase.removeChannel(progressChannel);
       supabase.removeChannel(challengeChannel);

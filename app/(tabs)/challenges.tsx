@@ -23,8 +23,6 @@ import { User } from "@supabase/supabase-js";
 import ChallengeView from "@/components/ChallengeView";
 import { Filter } from "@/components/Filter";
 import { Modal } from "@/components/Modal";
-import { ChallengeType } from "@/types/ChallengeType";
-import { UserType } from "@/types/UserType";
 import { useChallenges } from "@/lib/useChallenges";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useUsers } from "@/lib/useUsers";
@@ -155,8 +153,10 @@ export default function Challenges() {
               ]}
               onPress={() => {
                 setOpenConfiguration(false);
+                if(challengeTotalReps != null && Number(challengeTotalReps) > 0 && challengeName != null && challengeName != "" ){
+                  createChallenge();
+                }
                 
-                createChallenge();
               }}
             >
               <Text style={styles.buttonText}>Create</Text>

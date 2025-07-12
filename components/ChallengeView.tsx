@@ -4,21 +4,56 @@ import { Image, TextInput } from "react-native";
 import { StyleSheet, Text, View, Pressable } from "react-native";
 import { Modal } from "./Modal";
 import { supabase } from "@/lib/supabase";
-import { useChallenges } from "@/lib/useChallenges";
+import Toast from "react-native-toast-message";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { AntDesign } from "@expo/vector-icons";
+import { UserType } from "@/types/UserType";
 
 type ChallengeProps = {
   challenges: ChallengeType[];
   refetchChallenges: () => void;
 };
 
-const ChallengeView: React.FC<ChallengeProps> = ({ challenges, refetchChallenges }) => {
+const ChallengeView: React.FC<ChallengeProps> = ({
+  challenges,
+  refetchChallenges,
+}) => {
   const [isProgressEditorOpen, setProgressEditorOpened] = useState(false);
   const [currentlyEditedChallenge, setCurrentlyEditedChallenge] =
     useState<ChallengeType>();
   const [inputValue, setInputValue] = useState("");
   const { user } = useCurrentUser();
+  const [userProgressMap, setUserProgressMap] = useState<{
+    [key: string]: number;
+  }>({});
+
+
+  useEffect(() => {
+    const loadProgress = async () => {
+      const progressMap: { [key: string]: number } = {};
+
+      for (const challenge of challenges) {
+        for (const participant of challenge.participants || []) {
+          const { data, error } = await supabase
+            .from("challenges_progress")
+            .select("progress")
+            .eq("challenge_id", challenge.id) // important: use `challenge_id` not `id`
+            .eq("user_id", participant.id)
+            .single();
+
+          if (!error && data?.progress != null) {
+            const key = `${challenge.id}_${participant.id}`;
+            progressMap[key] = data.progress;
+          }
+        }
+      }
+
+      setUserProgressMap(progressMap);
+    };
+
+    loadProgress();
+  }, [challenges]);
+
 
   const deleteProgress = async (
     progressId: string | null,
@@ -103,6 +138,23 @@ const ChallengeView: React.FC<ChallengeProps> = ({ challenges, refetchChallenges
     refetchChallenges();
   };
 
+  const getProgressFromUser = async (challengeId: string, user: UserType) => {
+    return await supabase
+        .from("challenges_progress")
+        .select("progress")
+        .eq("id", challengeId)
+        .eq("user_id", user.id)
+        .single();
+
+  }
+
+  const getBgColor = (challengeId: string, userId: string, goal: number) => {
+    const key = `${challengeId}_${userId}`;
+    const progress = userProgressMap[key];
+    return progress != null && progress >= goal ? "lightgreen" : "silver";
+  };
+
+
   return (
     <View>
       {challenges.map((challenge, index) => {
@@ -121,8 +173,8 @@ const ChallengeView: React.FC<ChallengeProps> = ({ challenges, refetchChallenges
               <Text style={styles.challengeTitle}>{challenge.name}</Text>
               <View style={{ flexDirection: "row", marginLeft: 10 }}>
                 {challenge.participants?.map((user) => {
-                  const initial =
-                    user.name?.charAt(0)?.toUpperCase() ?? "?";
+                  //console.log(user.name);
+                  const initial = user.name?.charAt(0)?.toUpperCase() ?? "?";
                   return (
                     <View
                       key={user.id}
@@ -134,12 +186,12 @@ const ChallengeView: React.FC<ChallengeProps> = ({ challenges, refetchChallenges
                         borderWidth: 2,
                         marginBottom: 6,
                         borderColor: "#fff",
-                        backgroundColor: "#eee",
+                        backgroundColor: getBgColor(challenge.id,user.id,challenge.goal),
                         justifyContent: "center",
                         alignItems: "center",
                       }}
                     >
-                      <Text style={{ fontWeight: "bold", color: "#444" }}>
+                      <Text style={{ fontWeight: "bold", color: "#313131" }}>
                         {initial}
                       </Text>
                     </View>
@@ -149,7 +201,9 @@ const ChallengeView: React.FC<ChallengeProps> = ({ challenges, refetchChallenges
 
               {/* Delete Button */}
               <Pressable
-                style={[{ flexDirection: "row", marginBottom: 5 }]}
+                style={[
+                  { flexDirection: "row", marginBottom: 5, marginLeft: "auto" },
+                ]}
                 onPress={() => {
                   //progress id null
                   deleteProgress(challenge.progressId, challenge.id);
@@ -236,19 +290,25 @@ const ChallengeView: React.FC<ChallengeProps> = ({ challenges, refetchChallenges
               { backgroundColor: "limegreen", marginTop: 20 },
             ]}
             onPress={async () => {
-              if (inputValue === "") {
-                setInputValue("0");
+              // Normalize input
+              var numericValue = Number(inputValue || "0");
+              const goal = Number(currentlyEditedChallenge?.goal || 0);
+
+              if (numericValue > goal) {
+                  numericValue = goal;
+                
               }
 
               const { error } = await supabase
                 .from("challenges_progress")
-                .update({ progress: Number(inputValue) })
+                .update({ progress: numericValue })
                 .eq("id", currentlyEditedChallenge?.progressId);
 
               if (error) {
-                console.error("Failed to update progress:", error.message);
+                console.log("error in challengeview")
                 return;
               }
+
               setProgressEditorOpened(false);
               refetchChallenges();
             }}

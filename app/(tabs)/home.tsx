@@ -1,5 +1,7 @@
 import { Text, View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { router } from 'expo-router';
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const styles = StyleSheet.create({
   title: {
@@ -33,6 +35,8 @@ const styles = StyleSheet.create({
 
 
 export default function Index() {
+
+
   return (
     <ScrollView>
       {/* Title */}
