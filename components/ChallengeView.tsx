@@ -6,20 +6,102 @@ import { Modal } from "./Modal";
 import { supabase } from "@/lib/supabase";
 import { useChallenges } from "@/lib/useChallenges";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { AntDesign } from "@expo/vector-icons";
 
 type ChallengeProps = {
   challenges: ChallengeType[];
+  refetchChallenges: () => void;
 };
 
-const ChallengeView: React.FC<ChallengeProps> = ({
-  challenges,
-}) => {
+const ChallengeView: React.FC<ChallengeProps> = ({ challenges, refetchChallenges }) => {
   const [isProgressEditorOpen, setProgressEditorOpened] = useState(false);
-  const [currentlyEditedChallenge, setCurrentlyEditedChallenge] = useState<ChallengeType>()
-  const [inputValue, setInputValue] = useState("")
-  const { user } =  useCurrentUser()
-  const { refetchChallenges } = useChallenges(user?.id);
+  const [currentlyEditedChallenge, setCurrentlyEditedChallenge] =
+    useState<ChallengeType>();
+  const [inputValue, setInputValue] = useState("");
+  const { user } = useCurrentUser();
 
+  const deleteProgress = async (
+    progressId: string | null,
+    challenge_id: string
+  ) => {
+    if (!user) {
+      console.error("No current user found");
+      return;
+    }
+
+    if (!progressId) {
+      console.error("Invalid progressId:", progressId);
+      return;
+    }
+
+    console.log(
+      "Deleting progress for:",
+      progressId,
+      "in challenge:",
+      challenge_id
+    );
+
+    const { error: deleteError } = await supabase
+      .from("challenges_progress")
+      .delete()
+      .eq("id", progressId);
+
+    if (deleteError) {
+      console.error("Delete failed:", deleteError.message);
+      return;
+    }
+    const { data: challengeData, error: fetchError } = await supabase
+      .from("challenges")
+      .select("participants")
+      .eq("id", challenge_id)
+      .single();
+
+    //console.log("Participants:",challengeData?.participants );
+
+    if (fetchError || !challengeData) {
+      console.error(
+        "Error fetching challenge participants:",
+        fetchError?.message
+      );
+      return;
+    }
+
+    const userId = user.id;
+
+    const updatedParticipants = (challengeData.participants ?? []).filter(
+      (participant: string) => participant !== userId
+    );
+
+    //console.log(updatedParticipants)
+
+    const { data, error: updateError } = await supabase
+      .from("challenges")
+      .update({
+        participants: updatedParticipants, // Directly set the updated array
+      })
+      .eq("id", challenge_id)
+      .select();
+
+    //console.log("data:", data)
+
+    const { data: UpdatedChallengeData, error: UpdatedFetchError } =
+      await supabase
+        .from("challenges")
+        .select("participants")
+        .eq("id", challenge_id)
+        .single();
+
+    //console.log("database data:", UpdatedChallengeData?.participants)
+
+    if (updateError) {
+      console.error("Failed to update participants:", updateError.message);
+      return;
+    }
+
+    //console.log("Participants updated");
+
+    refetchChallenges();
+  };
 
   return (
     <View>
@@ -38,11 +120,12 @@ const ChallengeView: React.FC<ChallengeProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text style={styles.challengeTitle}>{challenge.name}</Text>
               <View style={{ flexDirection: "row", marginLeft: 10 }}>
-                {challenge.participants?.map((user) =>
-                  user.avatar_url ? (
-                    <Image
+                {challenge.participants?.map((user) => {
+                  const initial =
+                    user.name?.charAt(0)?.toUpperCase() ?? "?";
+                  return (
+                    <View
                       key={user.id}
-                      source={{ uri: user.avatar_url }}
                       style={{
                         width: 32,
                         height: 32,
@@ -52,11 +135,28 @@ const ChallengeView: React.FC<ChallengeProps> = ({
                         marginBottom: 6,
                         borderColor: "#fff",
                         backgroundColor: "#eee",
+                        justifyContent: "center",
+                        alignItems: "center",
                       }}
-                    />
-                  ) : null
-                )}
+                    >
+                      <Text style={{ fontWeight: "bold", color: "#444" }}>
+                        {initial}
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
+
+              {/* Delete Button */}
+              <Pressable
+                style={[{ flexDirection: "row", marginBottom: 5 }]}
+                onPress={() => {
+                  //progress id null
+                  deleteProgress(challenge.progressId, challenge.id);
+                }}
+              >
+                <AntDesign name="closecircle" size={27} color="red" />
+              </Pressable>
             </View>
             <View
               style={{
@@ -88,18 +188,44 @@ const ChallengeView: React.FC<ChallengeProps> = ({
       })}
 
       <Modal isOpen={isProgressEditorOpen} title="Edit Progress">
-        {/* Progress editing*/}
-        <View style={styles.container}>
-          <TextInput
-            style={styles.textInput}
-            onChangeText={(text) => {
-              const numericText = text.replace(/[^0-9]/g, "");
-              setInputValue(numericText);
-            }}
-            keyboardType="numeric"
-            value={inputValue}
-            maxLength={4}
-          />
+        <View style={styles.inputWrapper}>
+          <Text style={styles.inputLabel}>Enter new progress</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Pressable
+              style={[styles.adjustButton]}
+              onPress={() => {
+                let newVal = Number(inputValue) || 0;
+                newVal = Math.max(newVal - 1, 0);
+                setInputValue(newVal.toString());
+              }}
+            >
+              <Text style={styles.adjustButtonText}>−</Text>
+            </Pressable>
+
+            <TextInput
+              style={styles.textInput}
+              onChangeText={(text) => {
+                const numericText = text.replace(/[^0-9]/g, "");
+                setInputValue(numericText);
+              }}
+              keyboardType="numeric"
+              value={inputValue}
+              maxLength={4}
+              placeholder="0"
+              placeholderTextColor="#999"
+            />
+
+            <Pressable
+              style={[styles.adjustButton, { backgroundColor: "#3EEE73" }]}
+              onPress={() => {
+                let newVal = Number(inputValue) || 0;
+                newVal = newVal + 1;
+                setInputValue(newVal.toString());
+              }}
+            >
+              <Text style={styles.adjustButtonText}>+</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Buttons */}
@@ -116,17 +242,15 @@ const ChallengeView: React.FC<ChallengeProps> = ({
 
               const { error } = await supabase
                 .from("challenges_progress")
-                .update({ progress: Number(inputValue) }) // make sure it's a number
+                .update({ progress: Number(inputValue) })
                 .eq("id", currentlyEditedChallenge?.progressId);
 
               if (error) {
                 console.error("Failed to update progress:", error.message);
                 return;
-              }else{
-                refetchChallenges()
               }
-
               setProgressEditorOpened(false);
+              refetchChallenges();
             }}
           >
             <Text style={styles.buttonText}>Save</Text>
@@ -216,17 +340,54 @@ const styles = StyleSheet.create({
     fontFamily: "Gabarito",
   },
   textInput: {
-    width: 75,
-    height: 60,
-    borderColor: "#000",
+    width: 100,
+    height: 56,
+    borderColor: "#ccc",
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 24,
+    fontFamily: "Gabarito",
+    backgroundColor: "#fff",
+    color: "#333",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
+    elevation: 2,
+    textAlign: "center",
+  },
+
+  inputWrapper: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+
+  inputLabel: {
+    fontSize: 16,
+    color: "#444",
+    marginBottom: 8,
     fontFamily: "Gabarito",
-    fontSize: 25,
+  },
+  adjustButton: {
+    backgroundColor: "#F54D69",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#6a82fb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  adjustButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 24,
+    lineHeight: 24,
+    fontFamily: "Gabarito",
   },
 });
 

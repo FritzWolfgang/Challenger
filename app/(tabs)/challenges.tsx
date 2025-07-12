@@ -34,19 +34,19 @@ export default function Challenges() {
   const [challengeName, setChallengeName] = useState("");
   const [challengeTotalReps, setChallengeTotalReps] = useState("");
   const [openParticipantSearch, setOpenParticipantSearch] = useState(false);
-  const [chosenObjects, setChosenObjects] = useState<string[]>([]);
 
   const { user: currentUser } = useCurrentUser();
-  const { challenges, refetchChallenges } = useChallenges(currentUser?.id);
-  const { users, otherUsers } = useUsers(currentUser?.id);
+
+  const [chosenParticipants, setChosenParticipants] = useState<string[]>([]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetchChallenges();
-    }, 1000);
+    if (currentUser?.id) {
+      setChosenParticipants([currentUser.id]);
+    }
+  }, [currentUser?.id]);
 
-    return () => clearInterval(interval);
-  }, []); 
+  const { challenges, refetchChallenges } = useChallenges(currentUser?.id);
+  const { users, otherUsers } = useUsers(currentUser?.id);
 
   const createChallenge = async () => {
     if (!challengeName || isNaN(Number(challengeTotalReps))) return;
@@ -54,7 +54,13 @@ export default function Challenges() {
     const { data: creator, error: authError } = await supabase.auth.getUser();
     if (authError || !creator?.user) return;
 
-    const participantIds = users.map((user) => user.id);
+    const finalChosenUsers = users.filter((user) =>
+      chosenParticipants.includes(user.name) || user.id == currentUser?.id
+    );
+
+    const participantIds = finalChosenUsers.map((user) => user.id);
+
+    console.log(participantIds);
 
     const { data: challengeData, error } = await supabase
       .from("challenges")
@@ -74,7 +80,7 @@ export default function Challenges() {
       return;
     }
 
-    for (const user of users) {
+    for (const user of finalChosenUsers) {
       const { error } = await supabase.from("challenges_progress").insert([
         {
           challenge_id: challengeData.id,
@@ -97,8 +103,6 @@ export default function Challenges() {
     await refetchChallenges();
   };
 
-  
-
   return (
     <LinearGradient
       colors={["#fc5c7d", "#6a82fb"]}
@@ -110,7 +114,7 @@ export default function Challenges() {
         <Text style={[styles.title]}>Challenges</Text>
 
         <ScrollView style={{ marginTop: 20, paddingHorizontal: 20 }}>
-          <ChallengeView challenges={challenges}></ChallengeView>
+          <ChallengeView challenges={challenges} refetchChallenges={refetchChallenges}></ChallengeView>
         </ScrollView>
 
         <Modal isOpen={openConfiguration} title="Create a Challenge">
@@ -151,6 +155,7 @@ export default function Challenges() {
               ]}
               onPress={() => {
                 setOpenConfiguration(false);
+                
                 createChallenge();
               }}
             >
@@ -178,14 +183,16 @@ export default function Challenges() {
           objects={otherUsers
             .filter((user) => user.id)
             .map((user) => user.name)}
+          
           onPressCancel={() => {
             setOpenParticipantSearch(false);
             setOpenConfiguration(true);
           }}
           onSelect={(selected) => {
-            setChosenObjects(
-              [...selected, currentUser?.user_metadata?.full_name]
-            );
+            setChosenParticipants([
+              ...selected,
+              currentUser?.user_metadata?.full_name,
+            ]);
             console.log("Selected participants:", [
               ...selected,
               currentUser?.user_metadata?.full_name,
