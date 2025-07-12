@@ -38,7 +38,15 @@ export default function Challenges() {
 
   const { user: currentUser } = useCurrentUser();
   const { challenges, refetchChallenges } = useChallenges(currentUser?.id);
-  const { users } = useUsers(currentUser?.id);
+  const { users, otherUsers } = useUsers(currentUser?.id);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchChallenges();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []); 
 
   const createChallenge = async () => {
     if (!challengeName || isNaN(Number(challengeTotalReps))) return;
@@ -89,42 +97,7 @@ export default function Challenges() {
     await refetchChallenges();
   };
 
-  const updateProgress = async (progressId: string, change: number) => {
-    if (!currentUser) return;
-
-    const { data: progressData, error } = await supabase
-      .from("challenges_progress")
-      .select("*")
-      .eq("user_id", currentUser.id)
-      .eq("id", progressId)
-      .single();
-
-    if (error || !progressData) {
-      console.error("Failed to fetch challenge progress:", error);
-      return;
-    }
-
-    const newProgress = Math.max(
-      0,
-      Math.min(progressData.progress + change, progressData.goal)
-    );
-
-    console.log(newProgress);
-
-    if (newProgress === progressData.progress) return;
-
-    const { error: updateError } = await supabase
-      .from("challenges_progress")
-      .update({ progress: newProgress })
-      .eq("id", progressData.id);
-
-    if (updateError) {
-      console.error("Failed to update progress:", updateError);
-      return;
-    }
-
-    await refetchChallenges();
-  };
+  
 
   return (
     <LinearGradient
@@ -168,7 +141,7 @@ export default function Challenges() {
                 setOpenConfiguration(false);
               }}
             >
-              <Text style={styles.buttonText}>Choose component(s)</Text>
+              <Text style={styles.buttonText}>Choose competitor(s)</Text>
             </Pressable>
 
             <Pressable
@@ -202,29 +175,26 @@ export default function Challenges() {
         </Modal>
 
         <Filter
-          objects={users
-            .filter((user) => user.id !== currentUser?.id)
+          objects={otherUsers
+            .filter((user) => user.id)
             .map((user) => user.name)}
           onPressCancel={() => {
             setOpenParticipantSearch(false);
             setOpenConfiguration(true);
           }}
           onSelect={(selected) => {
-            setChosenObjects([selected, currentUser?.user_metadata?.full_name]);
-            console.log("Selected participants:", selected);
+            setChosenObjects(
+              [...selected, currentUser?.user_metadata?.full_name]
+            );
+            console.log("Selected participants:", [
+              ...selected,
+              currentUser?.user_metadata?.full_name,
+            ]);
           }}
           isOpen={openParticipantSearch}
           style={{ marginTop: 100 }}
           title="Choose others"
         />
-
-        {/*<Feather
-          name="home"
-          size={35}
-          color="black"
-          onPress={() => router.push("/home")}
-          style={styles.homeButton}
-        />*/}
 
         <MaterialCommunityIcons
           name="sword-cross"

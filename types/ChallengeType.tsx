@@ -2,8 +2,9 @@ import { UserType } from "./UserType";
 
 export type ChallengeType = {
   id: string;
+  progressId: string;
   name: string;
-  totalReps: number;
-  completedReps: number;
+  progression: number;
+  goal: number;
   participants: UserType[];
 };

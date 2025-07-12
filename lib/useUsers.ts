@@ -9,6 +9,7 @@ export type UserType = {
 
 export function useUsers(currentUserId?: string) {
   const [users, setUsers] = useState<UserType[]>([]);
+  const [otherUsers, setOtherUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,18 +28,28 @@ export function useUsers(currentUserId?: string) {
       }
 
       const validUsers = (data || [])
-        .filter((user) => user.full_name && user.id !== currentUserId)
+        .filter((user) => user.full_name)
         .map((user) => ({
           id: user.id,
           name: user.full_name,
         }));
 
       setUsers(validUsers);
+
+      const otherValidUsers = (data || [])
+        .filter((user) => user.full_name && user.id !== currentUserId)
+        .map((user) => ({
+          id: user.id,
+          name: user.full_name,
+        }));
+
+      setOtherUsers(otherValidUsers);
+
       setLoading(false);
     };
 
     fetchUsers();
   }, [currentUserId]);
 
-  return { users, loading, error };
+  return { users, otherUsers, loading, error };
 }

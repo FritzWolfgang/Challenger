@@ -7,23 +7,43 @@ export function useChallenges(userId?: string) {
 
   const loadChallenges = async () => {
     if (!userId) return;
-    const { data, error } = await supabase
+
+    const { data: progressData, error: progressError } = await supabase
       .from("challenges_progress")
       .select("*")
       .eq("user_id", userId);
 
-    if (error) {
-      console.error(error);
+    if (progressError) {
+      console.error("Error loading progress:", progressError);
       return;
     }
 
-    const formatted = data.map((c) => ({
-      id: c.id,
-      name: c.name,
-      totalReps: c.goal,
-      completedReps: c.progress,
-      participants: c.participants,
-    }));
+    const { data: challengesData, error: challengesError } = await supabase
+      .from("challenges")
+      .select("*");
+
+    if (challengesError) {
+      console.error("Error loading challenges:", challengesError);
+      return;
+    }
+
+    const progressMap = new Map(
+      (progressData ?? []).map((p) => [p.challenge_id, p])
+    );
+
+    const formatted = (challengesData ?? []).map((challenge) => {
+      const progress = progressMap.get(challenge.id);
+      return {
+        id: challenge.id,
+        name: challenge.name,
+        goal: challenge.goal, 
+        progression: progress ? progress.progress : 0, 
+        participants: challenge.participants ?? [],
+        progressId: progress ? progress.id : null,
+      };
+    });
+
+
     setChallenges(formatted);
   };
 
