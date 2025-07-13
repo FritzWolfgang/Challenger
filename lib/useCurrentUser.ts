@@ -1,28 +1,60 @@
 // hooks/useCurrentUser.ts
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
+import { UserType } from "@/types/UserType"; // adjust path if needed
 
 export function useCurrentUser() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
+  const fetchUser = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      if (error) {
-        setError(error.message);
-      } else {
-        setUser(data.user ?? null);
+    try {
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError || !authData.user) {
+        setError(authError?.message || "No user found");
+        setUser(null);
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
-    };
+      const userId = authData.user.id;
 
-    getUser();
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("username, avatar_url")
+        .eq("id", userId)
+        .single();
+
+      if (profileError || !profileData) {
+        setError(profileError?.message || "Profile not found");
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      setUser({
+        id: userId,
+        email: authData.user.email || "",
+        username: profileData.username,
+        avatar_url: profileData.avatar_url || undefined,
+      });
+    } catch (e: any) {
+      setError(e.message || "Unknown error");
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { user, loading, error };
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  return { user, loading, error, reloadUser: fetchUser };
 }

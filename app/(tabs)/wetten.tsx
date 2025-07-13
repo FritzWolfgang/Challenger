@@ -4,11 +4,26 @@ import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
+
+
+export default function Wetten() {
+  return (
+    <LinearGradient
+      colors={["#6ABAFB", "#FC5CD4"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradient}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.title]}>Wetten</Text>
+
+
+      </View>
+    </LinearGradient>
+  );
+}
+
 const styles = StyleSheet.create({
-  title: {
-    fontFamily: "Gabarito",
-    fontSize: 50,
-  },
   container: {
     paddingTop: 80,
     alignItems: "center",
@@ -30,33 +45,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 50,
   },
+  title: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#fff",
+    fontFamily: "Gabarito",
+    marginLeft: 20,
+  },
+  gradient: {
+    flex: 1,
+    paddingTop: 60,
+  },
 });
-
-export default function Wetten() {
-  return (
-    <LinearGradient
-      colors={["#6ABAFB", "#FC5CD4"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{ flex: 1 }}
-    >
-      <View style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-          {/* Title */}
-          <View style={styles.container}>
-            <Text style={styles.title}>Wetten</Text>
-          </View>
-        </ScrollView>
-
-        {/* Home Button */}
-        <Feather
-          name="home"
-          size={35}
-          color="black"
-          onPress={() => router.push("/home")}
-          style={styles.homeButton}
-        />
-      </View>
-    </LinearGradient>
-  );
-}

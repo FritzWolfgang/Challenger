@@ -3,11 +3,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 
 export function useChallenges(userId?: string) {
-  const [challenges, setChallenges] = useState<ChallengeType[]>([]);
+  const [acceptedChallenges, setAcceptedChallenges] = useState<ChallengeType[]>(
+    []
+  );
+  const [pendingChallenges, setPendingChallenges] = useState<ChallengeType[]>(
+    []
+  );
 
   const loadChallenges = async () => {
     if (!userId) return;
 
+    // 1. Fetch all progress records for this user
     const { data: progressData, error: progressError } = await supabase
       .from("challenges_progress")
       .select("*")
@@ -18,16 +24,23 @@ export function useChallenges(userId?: string) {
       return;
     }
 
+    // 2. Get challenge IDs from progress
+    const challengeIds = progressData
+      ?.map((p) => p.challenge_id)
+      .filter(Boolean);
+
+    // 3. Fetch related challenges
     const { data: challengesData, error: challengesError } = await supabase
       .from("challenges")
-      .select("*");
+      .select("*")
+      .in("id", challengeIds);
 
     if (challengesError) {
       console.error("Error loading challenges:", challengesError);
       return;
     }
 
-    // Collect unique user IDs from all challenges
+    // 4. Collect unique user IDs from participants
     const participantIds = new Set<string>();
     for (const challenge of challengesData ?? []) {
       (challenge.participants ?? []).forEach((id: string) =>
@@ -35,10 +48,9 @@ export function useChallenges(userId?: string) {
       );
     }
 
-    // Fetch users info in one batch
     const { data: usersData, error: usersError } = await supabase
       .from("profiles")
-      .select("id, full_name")
+      .select("id, username")
       .in("id", Array.from(participantIds));
 
     if (usersError) {
@@ -47,37 +59,38 @@ export function useChallenges(userId?: string) {
     }
 
     const usersMap = new Map(
-      usersData
-        .filter((u) => u.full_name) // Remove invalid names
-        .map((u) => [u.id, { ...u, name: u.full_name }])
+      usersData.map((u) => [u.id, { ...u, name: u.username }])
     );
 
     const progressMap = new Map(
       (progressData ?? []).map((p) => [p.challenge_id, p])
     );
 
-    const formatted = (challengesData ?? [])
-      .filter((challenge) => {
-        const progress = progressMap.get(challenge.id);
-        return progress && challenge.participants?.includes(userId);
-      })
-      .map((challenge) => {
-        const progress = progressMap.get(challenge.id);
-        const fullParticipants = (challenge.participants ?? [])
-          .map((id: string) => usersMap.get(id))
-          .filter(Boolean);
+    const formatted = (challengesData ?? []).map((challenge) => {
+      const progress = progressMap.get(challenge.id);
+      const fullParticipants = (challenge.participants ?? [])
+        .map((id: string) => usersMap.get(id))
+        .filter(Boolean);
+      
+      const fullInvited = (challenge.invited ?? [])
+        .map((id: string) => usersMap.get(id))
+        .filter(Boolean);  
 
-        return {
-          id: challenge.id,
-          name: challenge.name,
-          goal: challenge.goal,
-          progression: progress ? progress.progress : 0,
-          participants: fullParticipants,
-          progressId: progress ? progress.id : null,
-        };
-      });
+      return {
+        id: challenge.id,
+        name: challenge.name,
+        goal: challenge.goal,
+        progression: progress?.progress || 0,
+        participants: fullParticipants,
+        invited: fullInvited,
+        progressId: progress?.id || null,
+        status: progress?.status || "invited",
+      };
+    });
 
-    setChallenges(formatted);
+    // 5. Split into accepted and pending challenges
+    setAcceptedChallenges(formatted.filter((c) => c.status === "accepted"));
+    setPendingChallenges(formatted.filter((c) => c.status === "invited"));
   };
 
   useEffect(() => {
@@ -87,7 +100,6 @@ export function useChallenges(userId?: string) {
   useEffect(() => {
     if (!userId) return;
 
-    // Subscribe to progress changes for the current user
     const progressChannel = supabase
       .channel(`user-progress-${userId}`)
       .on(
@@ -99,7 +111,7 @@ export function useChallenges(userId?: string) {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log("Real-time change received:", payload);
+          console.log("Real-time progress change:", payload);
           loadChallenges();
         }
       )
@@ -115,16 +127,21 @@ export function useChallenges(userId?: string) {
           table: "challenges",
         },
         (payload) => {
-          console.log("Challenge table change:", payload);
+          console.log("Real-time challenge change:", payload);
           loadChallenges();
         }
       )
       .subscribe();
+
     return () => {
       supabase.removeChannel(progressChannel);
       supabase.removeChannel(challengeChannel);
     };
   }, [userId]);
 
-  return { challenges, refetchChallenges: loadChallenges };
+  return {
+    acceptedChallenges,
+    pendingChallenges,
+    refetchChallenges: loadChallenges,
+  };
 }

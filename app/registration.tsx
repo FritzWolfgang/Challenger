@@ -87,7 +87,7 @@ export default function Registration() {
       password,
       options: {
         data: {
-          full_name: username
+          username: username
         },
       },
     });

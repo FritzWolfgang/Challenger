@@ -4,7 +4,6 @@ import { Image, TextInput } from "react-native";
 import { StyleSheet, Text, View, Pressable } from "react-native";
 import { Modal } from "./Modal";
 import { supabase } from "@/lib/supabase";
-import Toast from "react-native-toast-message";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { AntDesign } from "@expo/vector-icons";
 import { UserType } from "@/types/UserType";
@@ -174,7 +173,7 @@ const ChallengeView: React.FC<ChallengeProps> = ({
               <View style={{ flexDirection: "row", marginLeft: 10 }}>
                 {challenge.participants?.map((user) => {
                   //console.log(user.name);
-                  const initial = user.name?.charAt(0)?.toUpperCase() ?? "?";
+                  const initial = user.username?.charAt(0)?.toUpperCase() ?? "?";
                   return (
                     <View
                       key={user.id}

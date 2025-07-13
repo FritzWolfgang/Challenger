@@ -1,7 +1,6 @@
 // React & React Native
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,12 +11,10 @@ import {
 
 // Expo
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useFocusEffect } from "expo-router";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Supabase
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
 
 // Components
 import ChallengeView from "@/components/ChallengeView";
@@ -26,14 +23,16 @@ import { Modal } from "@/components/Modal";
 import { useChallenges } from "@/lib/useChallenges";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useUsers } from "@/lib/useUsers";
+import PendingChallengesView from "@/components/PendingChallengesView";
 
 export default function Challenges() {
-  const [openConfiguration, setOpenConfiguration] = useState(false);
+  const [openCreationModal, setCreationModalOpen] = useState(false);
   const [challengeName, setChallengeName] = useState("");
   const [challengeTotalReps, setChallengeTotalReps] = useState("");
   const [openParticipantSearch, setOpenParticipantSearch] = useState(false);
+  const [openAcceptModal, setAcceptModalOpen] = useState(false);
 
-  const { user: currentUser } = useCurrentUser();
+  const { user: currentUser, reloadUser } = useCurrentUser();
 
   const [chosenParticipants, setChosenParticipants] = useState<string[]>([]);
 
@@ -43,7 +42,8 @@ export default function Challenges() {
     }
   }, [currentUser?.id]);
 
-  const { challenges, refetchChallenges } = useChallenges(currentUser?.id);
+  const { acceptedChallenges, pendingChallenges, refetchChallenges } =
+    useChallenges(currentUser?.id);
   const { users, otherUsers } = useUsers(currentUser?.id);
 
   const createChallenge = async () => {
@@ -52,13 +52,14 @@ export default function Challenges() {
     const { data: creator, error: authError } = await supabase.auth.getUser();
     if (authError || !creator?.user) return;
 
-    const finalChosenUsers = users.filter((user) =>
-      chosenParticipants.includes(user.name) || user.id == currentUser?.id
+    const finalChosenUsers = users.filter(
+      (user) =>
+        chosenParticipants.includes(user.name) || user.id == currentUser?.id
     );
 
-    const participantIds = finalChosenUsers.map((user) => user.id);
+    const invitedIds = finalChosenUsers.map((user) => user.id);
 
-    console.log(participantIds);
+    console.log(invitedIds);
 
     const { data: challengeData, error } = await supabase
       .from("challenges")
@@ -67,7 +68,8 @@ export default function Challenges() {
           name: challengeName,
           goal: Number(challengeTotalReps),
           creator: creator.user.id,
-          participants: participantIds,
+          participants: [creator.user.id],
+          invited: invitedIds,
         },
       ])
       .select()
@@ -79,25 +81,44 @@ export default function Challenges() {
     }
 
     for (const user of finalChosenUsers) {
-      const { error } = await supabase.from("challenges_progress").insert([
-        {
-          challenge_id: challengeData.id,
-          user_id: user.id,
-          username: user.name,
-          progress: 0,
-          goal: challengeData.goal,
-          name: challengeData.name,
-        },
-      ]);
-
-      if (error) {
-        console.error(`Error inserting progress for ${user.name}:`, error);
+      if(user.id == creator.user.id){
+        const { error } = await supabase.from("challenges_progress").insert([
+          {
+            challenge_id: challengeData.id,
+            user_id: user.id,
+            username: user.name,
+            progress: 0,
+            goal: challengeData.goal,
+            name: challengeData.name,
+            status: "accepted"
+          },
+        ]);
+        if (error) {
+          console.error(`Error inserting progress for ${user.name}:`, error);
+        }
+      }else{
+        const { error } = await supabase.from("challenges_progress").insert([
+          {
+            challenge_id: challengeData.id,
+            user_id: user.id,
+            username: user.name,
+            progress: 0,
+            goal: challengeData.goal,
+            name: challengeData.name,
+          },
+        ]);
+        if (error) {
+          console.error(`Error inserting progress for ${user.name}:`, error);
+        }
       }
+      
+
+      
     }
 
     setChallengeName("");
     setChallengeTotalReps("");
-    setOpenConfiguration(false);
+    setCreationModalOpen(false);
     await refetchChallenges();
   };
 
@@ -106,16 +127,21 @@ export default function Challenges() {
       colors={["#fc5c7d", "#6a82fb"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={{ flex: 1 }}
+      style={styles.gradient}
     >
       <View style={{ flex: 1 }}>
         <Text style={[styles.title]}>Challenges</Text>
 
-        <ScrollView style={{ marginTop: 20, paddingHorizontal: 20 }}>
-          <ChallengeView challenges={challenges} refetchChallenges={refetchChallenges}></ChallengeView>
+        <ScrollView
+          style={{ marginTop: 20, paddingHorizontal: 20, marginBottom: 100 }}
+        >
+          <ChallengeView
+            challenges={acceptedChallenges}
+            refetchChallenges={refetchChallenges}
+          ></ChallengeView>
         </ScrollView>
 
-        <Modal isOpen={openConfiguration} title="Create a Challenge">
+        <Modal isOpen={openCreationModal} title="Create a Challenge">
           <View style={styles.container}>
             <TextInput
               style={styles.input}
@@ -140,10 +166,10 @@ export default function Challenges() {
               style={styles.button}
               onPress={() => {
                 setOpenParticipantSearch(true);
-                setOpenConfiguration(false);
+                setCreationModalOpen(false);
               }}
             >
-              <Text style={styles.buttonText}>Choose competitor(s)</Text>
+              <Text style={styles.buttonText}>Choose competition</Text>
             </Pressable>
 
             <Pressable
@@ -152,11 +178,15 @@ export default function Challenges() {
                 { backgroundColor: "limegreen", marginTop: 20 },
               ]}
               onPress={() => {
-                setOpenConfiguration(false);
-                if(challengeTotalReps != null && Number(challengeTotalReps) > 0 && challengeName != null && challengeName != "" ){
+                setCreationModalOpen(false);
+                if (
+                  challengeTotalReps != null &&
+                  Number(challengeTotalReps) > 0 &&
+                  challengeName != null &&
+                  challengeName != ""
+                ) {
                   createChallenge();
                 }
-                
               }}
             >
               <Text style={styles.buttonText}>Create</Text>
@@ -172,9 +202,34 @@ export default function Challenges() {
                   borderWidth: 2,
                 },
               ]}
-              onPress={() => setOpenConfiguration(false)}
+              onPress={() => setCreationModalOpen(false)}
             >
               <Text style={[styles.buttonText, { color: "red" }]}>Cancel</Text>
+            </Pressable>
+          </View>
+        </Modal>
+
+        <Modal title="Pending Challenges" isOpen={openAcceptModal}>
+          <ScrollView>
+            <PendingChallengesView
+              pendingChallenges={pendingChallenges}
+              refetchChallenges={refetchChallenges}
+            />
+          </ScrollView>
+          <View style={styles.container}>
+            <Pressable
+              style={[
+                styles.button,
+                {
+                  backgroundColor: "darkorange",
+                  marginTop: 20,
+                  borderColor: "red",
+                  borderWidth: 2,
+                },
+              ]}
+              onPress={() => setAcceptModalOpen(false)}
+            >
+              <Text style={[styles.buttonText, { color: "white" }]}>Back</Text>
             </Pressable>
           </View>
         </Modal>
@@ -183,20 +238,18 @@ export default function Challenges() {
           objects={otherUsers
             .filter((user) => user.id)
             .map((user) => user.name)}
-          
           onPressCancel={() => {
             setOpenParticipantSearch(false);
-            setOpenConfiguration(true);
+            setCreationModalOpen(true);
           }}
           onSelect={(selected) => {
-            setChosenParticipants([
-              ...selected,
-              currentUser?.user_metadata?.full_name,
-            ]);
-            console.log("Selected participants:", [
-              ...selected,
-              currentUser?.user_metadata?.full_name,
-            ]);
+            const participants = currentUser?.username
+              ? [...selected, currentUser.username]
+              : [...selected];
+
+            setChosenParticipants(participants);
+
+            console.log("Selected participants:", participants);
           }}
           isOpen={openParticipantSearch}
           style={{ marginTop: 100 }}
@@ -208,15 +261,23 @@ export default function Challenges() {
           size={35}
           color="black"
           style={styles.challengeButton}
-          onPress={() => setOpenConfiguration(true)}
+          onPress={() => setCreationModalOpen(true)}
         />
 
-        <MaterialCommunityIcons
-          name="shield-sword-outline"
-          size={35}
-          color="black"
-          style={styles.defendButton}
-        />
+        <View style={styles.defendButtonContainer}>
+          <MaterialCommunityIcons
+            name="shield-sword-outline"
+            size={35}
+            color="black"
+            onPress={() => setAcceptModalOpen(true)}
+          />
+
+          {pendingChallenges.length > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{pendingChallenges.length}</Text>
+            </View>
+          )}
+        </View>
       </View>
     </LinearGradient>
   );
@@ -224,12 +285,15 @@ export default function Challenges() {
 
 const styles = StyleSheet.create({
   title: {
-    fontFamily: "Gabarito",
-    fontSize: 48,
-    marginTop: 80,
-    marginLeft: 20,
-    color: "#000000",
+    fontSize: 36,
     fontWeight: "bold",
+    color: "#fff",
+    fontFamily: "Gabarito",
+    marginLeft: 20,
+  },
+  gradient: {
+    flex: 1,
+    paddingTop: 60,
   },
   container: {
     alignItems: "center",
@@ -289,6 +353,39 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   defendButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    borderColor: "#fc5c7d",
+    borderWidth: 2,
+    elevation: 4,
+    shadowColor: "#fc5c7d",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+  },
+  badge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "red",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 5,
+    zIndex: 1,
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  defendButtonContainer: {
     position: "absolute",
     bottom: 20,
     right: 20,

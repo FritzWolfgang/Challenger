@@ -19,7 +19,7 @@ export function useUsers(currentUserId?: string) {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name");
+        .select("id, username");
 
       if (error) {
         setError(error.message);
@@ -28,19 +28,19 @@ export function useUsers(currentUserId?: string) {
       }
 
       const validUsers = (data || [])
-        .filter((user) => user.full_name)
+        .filter((user) => user.username)
         .map((user) => ({
           id: user.id,
-          name: user.full_name,
+          name: user.username,
         }));
 
       setUsers(validUsers);
 
       const otherValidUsers = (data || [])
-        .filter((user) => user.full_name && user.id !== currentUserId)
+        .filter((user) => user.username && user.id !== currentUserId)
         .map((user) => ({
           id: user.id,
-          name: user.full_name,
+          name: user.username,
         }));
 
       setOtherUsers(otherValidUsers);
