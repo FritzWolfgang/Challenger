@@ -85,6 +85,7 @@ export function useChallenges(userId?: string) {
         invited: fullInvited,
         progressId: progress?.id || null,
         status: progress?.status || "invited",
+        expires_at: challenge.expires_at || undefined,
       };
     });
 

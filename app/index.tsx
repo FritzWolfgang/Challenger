@@ -12,56 +12,6 @@ import {
   View,
 } from "react-native";
 
-const styles = StyleSheet.create({
-  title: {
-    fontFamily: "Gabarito",
-    fontSize: 50,
-  },
-  container: {
-    paddingTop: 50,
-    alignItems: "center",
-  },
-  button: {
-    width: 300,
-    backgroundColor: "#2fb507",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-  smallTextWhite: {
-    fontFamily: "Gabarito",
-    fontSize: 30,
-    color: "#fff",
-    textAlign: "center",
-    lineHeight: 50,
-  },
-  smallTextBlack: {
-    fontFamily: "Gabarito",
-    fontSize: 30,
-    color: "#000",
-    textAlign: "center",
-    lineHeight: 50,
-  },
-  textInput: {
-    width: 300,
-    height: 50,
-    borderColor: "#000",
-    borderWidth: 2,
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    fontFamily: "Gabarito",
-    fontSize: 20,
-  },
-});
-
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -105,7 +55,7 @@ export default function Index() {
 
           {/* Email */}
           <View style={styles.container}>
-            <Text style={styles.smallTextBlack}>Email</Text>
+            <Text style={styles.smallTextWhite}>Email</Text>
             <TextInput
               style={styles.textInput}
               value={email}
@@ -117,7 +67,7 @@ export default function Index() {
 
           {/* Password */}
           <View style={styles.container}>
-            <Text style={styles.smallTextBlack}>Password</Text>
+            <Text style={styles.smallTextWhite}>Password</Text>
             <TextInput
               secureTextEntry={true}
               style={styles.textInput}
@@ -127,33 +77,96 @@ export default function Index() {
           </View>
 
           {/* Log In Button */}
-          <View style={styles.container}>
+          <View
+            style={{ alignItems: "flex-start", marginTop: 50, marginLeft: 20 }}
+          >
+            <View style={styles.container}></View>
             <Pressable
               style={({ pressed }) => [
-                [styles.button],
+                styles.button,
                 pressed && { opacity: 0.5, shadowOpacity: 0.8 },
               ]}
               onPress={handleLogin}
             >
-              <Text style={styles.smallTextWhite}>Log in</Text>
-            </Pressable>
-          </View>
-
-          {/* Sign In Text */}
-          <View style={styles.container}>
-            <Pressable
-              onPress={() => {
-                router.push("/registration");
-              }}
-            >
-              <Text style={styles.smallTextBlack}>
-                New?{"\n"}
-                <Text style={{ color: "#13A2F4" }}>Sign In</Text>
+              <Text style={[styles.smallTextWhite, { alignSelf: "center" }]}>
+                Log in
               </Text>
             </Pressable>
+
+            {/* Sign In Text */}
+            <View style={styles.container}>
+              <Pressable
+                style={{ marginTop: 20, marginLeft: 50 }}
+                onPress={() => {
+                  router.push("/registration");
+                }}
+              >
+                <Text style={styles.smallTextWhite}>
+                  {"New?  "}
+                  <Text
+                    style={{
+                      color: "#13A2F4",
+                      alignSelf: "center",
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    Sign In
+                  </Text>
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </View>
     </LinearGradient>
   );
 }
+const styles = StyleSheet.create({
+  title: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#fff",
+    fontFamily: "Gabarito",
+    marginLeft: 20, // Align title with left margin like profile screen
+    marginBottom: 30,
+  },
+  container: {
+    paddingTop: 20,
+    alignItems: "flex-start",
+    marginHorizontal: 20, 
+    width: "100%", 
+  },
+  button: {
+    marginTop: 25,
+    width: "90%",
+    backgroundColor: "#2fb507",
+    paddingVertical: 5,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  smallTextWhite: {
+    fontFamily: "Gabarito",
+    fontSize: 28, // Slightly smaller to match profile labels
+    color: "#fff",
+    marginBottom: 8, // Space between label and input
+  },
+  textInput: {
+    width: "90%",
+    height: 50,
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    fontFamily: "Gabarito",
+    fontSize: 20,
+    backgroundColor: "white",
+    paddingHorizontal: 12, // Add horizontal padding inside input
+  },
+});
+

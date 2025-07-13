@@ -17,7 +17,23 @@ export default function Wetten() {
       <View style={{ flex: 1 }}>
         <Text style={[styles.title]}>Wetten</Text>
 
-
+        <ScrollView
+          style={{ marginTop: 20, paddingHorizontal: 20, marginBottom: 100 }}
+        >
+          <Text
+            style={{
+              textAlign: "center",
+              marginTop: 20,
+              color: "#000000",
+              fontSize: 25,
+              backgroundColor: "white",
+              borderRadius: 20,
+              padding: 10,
+            }}
+          >
+            {"Work in progress : )"}
+          </Text>
+        </ScrollView>
       </View>
     </LinearGradient>
   );

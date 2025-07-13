@@ -7,5 +7,6 @@ export type ChallengeType = {
   progression: number;
   goal: number;
   participants: UserType[];
-  invited: UserType[]
+  invited: UserType[];
+  expires_at: string | null;
 };

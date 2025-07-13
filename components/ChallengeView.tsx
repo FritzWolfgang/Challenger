@@ -153,9 +153,18 @@ const ChallengeView: React.FC<ChallengeProps> = ({
     return progress != null && progress >= goal ? "lightgreen" : "silver";
   };
 
+  const getDaysLeft = (expiresAt?: string | null) => {
+    if (!expiresAt) return "∞";
+    const now = new Date();
+    const expiryDate = new Date(expiresAt);
+    const diffMs = expiryDate.getTime() - now.getTime();
+    if (diffMs <= 0) return 0; // expired
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24)); // convert ms to days
+  };
+
 
   return (
-    <View>
+    <View>∞
       {challenges.map((challenge, index) => {
         const progress = Math.min(challenge.progression / challenge.goal, 1);
         return (
@@ -173,7 +182,8 @@ const ChallengeView: React.FC<ChallengeProps> = ({
               <View style={{ flexDirection: "row", marginLeft: 10 }}>
                 {challenge.participants?.map((user) => {
                   //console.log(user.name);
-                  const initial = user.username?.charAt(0)?.toUpperCase() ?? "?";
+                  const initial =
+                    user.username?.charAt(0)?.toUpperCase() ?? "?";
                   return (
                     <View
                       key={user.id}
@@ -185,7 +195,11 @@ const ChallengeView: React.FC<ChallengeProps> = ({
                         borderWidth: 2,
                         marginBottom: 6,
                         borderColor: "#fff",
-                        backgroundColor: getBgColor(challenge.id,user.id,challenge.goal),
+                        backgroundColor: getBgColor(
+                          challenge.id,
+                          user.id,
+                          challenge.goal
+                        ),
                         justifyContent: "center",
                         alignItems: "center",
                       }}
@@ -215,17 +229,22 @@ const ChallengeView: React.FC<ChallengeProps> = ({
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 10,
                 marginTop: 4,
               }}
             >
               <Text style={styles.challengeSubtitle}>
                 {challenge.progression} / {challenge.goal}
               </Text>
+
               <View
                 style={[
                   styles.progressBarBackground,
-                  { flex: 1, marginTop: 0, marginBottom: 0 },
+                  {
+                    flex: 1,
+                    marginHorizontal: 10,
+                    marginTop: 0,
+                    marginBottom: 0,
+                  },
                 ]}
               >
                 <View
@@ -235,6 +254,16 @@ const ChallengeView: React.FC<ChallengeProps> = ({
                   ]}
                 />
               </View>
+
+              {challenge.expires_at && (
+                <Text style={[styles.challengeSubtitle]}>
+                  {getDaysLeft(challenge.expires_at) === 0
+                    ? "Expired"
+                    : `${getDaysLeft(challenge.expires_at)} day${
+                        Number(getDaysLeft(challenge.expires_at)) > 1 ? "s" : ""
+                      } left`}
+                </Text>
+              )}
             </View>
           </Pressable>
         );

@@ -135,10 +135,16 @@ export default function Challenges() {
         <ScrollView
           style={{ marginTop: 20, paddingHorizontal: 20, marginBottom: 100 }}
         >
-          <ChallengeView
-            challenges={acceptedChallenges}
-            refetchChallenges={refetchChallenges}
-          ></ChallengeView>
+          {!acceptedChallenges || acceptedChallenges.length === 0 ? (
+            <Text style={{ textAlign: "center", marginTop: 20, color: "#000000", fontSize: 25, backgroundColor: "white", borderRadius: 20, padding: 10 }}>
+              No challenges found : /
+            </Text>
+          ) : (
+            <ChallengeView
+              challenges={acceptedChallenges}
+              refetchChallenges={refetchChallenges}
+            />
+          )}
         </ScrollView>
 
         <Modal isOpen={openCreationModal} title="Create a Challenge">
