@@ -75,6 +75,7 @@ const ChallengeView: React.FC<ChallengeProps> = ({
       challenge_id
     );
 
+    // 1. Delete the progress row
     const { error: deleteError } = await supabase
       .from("challenges_progress")
       .delete()
@@ -84,58 +85,49 @@ const ChallengeView: React.FC<ChallengeProps> = ({
       console.error("Delete failed:", deleteError.message);
       return;
     }
+
+    // 2. Fetch current invited and participants arrays
     const { data: challengeData, error: fetchError } = await supabase
       .from("challenges")
-      .select("participants")
+      .select("invited, participants")
       .eq("id", challenge_id)
       .single();
 
-    //console.log("Participants:",challengeData?.participants );
-
     if (fetchError || !challengeData) {
-      console.error(
-        "Error fetching challenge participants:",
-        fetchError?.message
-      );
+      console.error("Error fetching challenge data:", fetchError?.message);
       return;
     }
 
     const userId = user.id;
 
+    // 3. Remove user from invited array
+    const updatedInvited = (challengeData.invited ?? []).filter(
+      (participant: string) => participant !== userId
+    );
+
+    // 4. Remove user from participants array
     const updatedParticipants = (challengeData.participants ?? []).filter(
       (participant: string) => participant !== userId
     );
 
-    //console.log(updatedParticipants)
-
-    const { data, error: updateError } = await supabase
+    // 5. Update challenge with new invited and participants arrays
+    const { error: updateError } = await supabase
       .from("challenges")
       .update({
-        participants: updatedParticipants, // Directly set the updated array
+        invited: updatedInvited,
+        participants: updatedParticipants,
       })
-      .eq("id", challenge_id)
-      .select();
-
-    //console.log("data:", data)
-
-    const { data: UpdatedChallengeData, error: UpdatedFetchError } =
-      await supabase
-        .from("challenges")
-        .select("participants")
-        .eq("id", challenge_id)
-        .single();
-
-    //console.log("database data:", UpdatedChallengeData?.participants)
+      .eq("id", challenge_id);
 
     if (updateError) {
-      console.error("Failed to update participants:", updateError.message);
+      console.error("Failed to update challenge arrays:", updateError.message);
       return;
     }
 
-    //console.log("Participants updated");
-
+    // 6. Refresh challenges in UI
     refetchChallenges();
   };
+
 
   const getProgressFromUser = async (challengeId: string, user: UserType) => {
     return await supabase
@@ -164,7 +156,7 @@ const ChallengeView: React.FC<ChallengeProps> = ({
 
 
   return (
-    <View>∞
+    <View>
       {challenges.map((challenge, index) => {
         const progress = Math.min(challenge.progression / challenge.goal, 1);
         return (

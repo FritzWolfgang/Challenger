@@ -57,7 +57,7 @@ export default function Index() {
           <View style={styles.container}>
             <Text style={styles.smallTextWhite}>Email</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: "black" }]}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -70,7 +70,7 @@ export default function Index() {
             <Text style={styles.smallTextWhite}>Password</Text>
             <TextInput
               secureTextEntry={true}
-              style={styles.textInput}
+              style={[styles.textInput, { color: "black" }]}
               value={password}
               onChangeText={setPassword}
             />

@@ -195,5 +195,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     backgroundColor: "white",
     paddingHorizontal: 12,
+    color: "black",
   },
 });

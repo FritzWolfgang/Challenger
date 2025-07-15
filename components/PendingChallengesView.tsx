@@ -4,6 +4,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { ChallengeType } from "@/types/ChallengeType";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { router } from "expo-router";
 
 type PendingChallengesProps = {
   pendingChallenges: ChallengeType[];
@@ -14,13 +15,49 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
   pendingChallenges,
   refetchChallenges,
 }) => {
+  const { user, reloadUser } = useCurrentUser();
 
-   const {user, reloadUser} = useCurrentUser() 
-
-  const handleAccept = async (challengeID: string, progressId: string) => {
+  const handleAccept = async (
+    challengeID: string,
+    progressId: string | null
+  ) => {
     if (!user?.id) return;
 
-    // Step 1: Fetch current participants
+    let actualProgressId = progressId;
+
+    if (!progressId) {
+      // No progress row exists — create one
+      const { data: newProgress, error: insertError } = await supabase
+        .from("challenges_progress")
+        .insert({
+          user_id: user.id,
+          challenge_id: challengeID,
+          status: "accepted",
+          progress: 0,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("Error creating progress:", insertError.message);
+        return;
+      }
+
+      actualProgressId = newProgress.id;
+    } else {
+      // Update existing progress status
+      const { error: progressError } = await supabase
+        .from("challenges_progress")
+        .update({ status: "accepted" })
+        .eq("id", progressId);
+
+      if (progressError) {
+        console.error("Error accepting challenge:", progressError.message);
+        return;
+      }
+    }
+
+    // Update participants array on challenge
     const { data: challengeData, error: fetchError } = await supabase
       .from("challenges")
       .select("participants")
@@ -32,14 +69,11 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
       return;
     }
 
-    const currentParticipants: string[] = challengeData.participants || [];
-
-    // Step 2: Add current user if not already in
+    const currentParticipants: string[] = challengeData?.participants ?? [];
     const updatedParticipants = currentParticipants.includes(user.id)
       ? currentParticipants
       : [...currentParticipants, user.id];
 
-    // Step 3: Update the participants array in challenges
     const { error: updateChallengeError } = await supabase
       .from("challenges")
       .update({ participants: updatedParticipants })
@@ -53,19 +87,9 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
       return;
     }
 
-    // Step 4: Update progress status
-    const { error: progressError } = await supabase
-      .from("challenges_progress")
-      .update({ status: "accepted" })
-      .eq("id", progressId);
-
-    if (progressError) {
-      console.error("Error accepting challenge:", progressError.message);
-    } else {
-      refetchChallenges();
-    }
+    refetchChallenges();
+    router.reload();
   };
-
 
   const handleDecline = async (progressId: string) => {
     const { error } = await supabase
@@ -90,7 +114,9 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
             <View style={styles.headerRow}>
               <Text style={styles.challengeName}>{challenge.name}</Text>
 
-              <Pressable onPress={() => handleDecline(challenge.progressId)}>
+              <Pressable
+                onPress={() => handleDecline(challenge.progressId ?? "")}
+              >
                 <AntDesign name="closecircle" size={24} color="red" />
               </Pressable>
             </View>
@@ -98,10 +124,12 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
             <Text style={styles.challengeGoal}>🎯 Goal: {challenge.goal}</Text>
 
             <View style={styles.participantsRow}>
-              {challenge.participants?.map((user) => {
+              {challenge.participants?.map((user, index) => {
+                // Use user.id if available and unique, else fallback to index-based key
+                const key = user.id ?? `${user.username ?? "user"}-${index}`;
                 const initial = user.username?.charAt(0)?.toUpperCase() ?? "?";
                 return (
-                  <View key={user.id} style={styles.avatarBubble}>
+                  <View key={key} style={styles.avatarBubble}>
                     <Text style={styles.avatarText}>{initial}</Text>
                   </View>
                 );
@@ -110,7 +138,7 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
 
             <Pressable
               style={[styles.acceptButton, styles.button]}
-              onPress={() => handleAccept(challenge.id,challenge.progressId)}
+              onPress={() => handleAccept(challenge.id, challenge.progressId)}
             >
               <Text style={styles.buttonText}>Accept</Text>
             </Pressable>

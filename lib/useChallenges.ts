@@ -71,10 +71,10 @@ export function useChallenges(userId?: string) {
       const fullParticipants = (challenge.participants ?? [])
         .map((id: string) => usersMap.get(id))
         .filter(Boolean);
-      
+
       const fullInvited = (challenge.invited ?? [])
         .map((id: string) => usersMap.get(id))
-        .filter(Boolean);  
+        .filter(Boolean);
 
       return {
         id: challenge.id,
@@ -85,7 +85,7 @@ export function useChallenges(userId?: string) {
         invited: fullInvited,
         progressId: progress?.id || null,
         status: progress?.status || "invited",
-        expires_at: challenge.expires_at || undefined,
+        expires_at: challenge.expires_at
       };
     });
 

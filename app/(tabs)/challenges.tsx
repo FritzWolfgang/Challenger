@@ -52,14 +52,16 @@ export default function Challenges() {
     const { data: creator, error: authError } = await supabase.auth.getUser();
     if (authError || !creator?.user) return;
 
+    const creatorId = creator.user.id;
+
+    // Select users from list (creator always included)
     const finalChosenUsers = users.filter(
-      (user) =>
-        chosenParticipants.includes(user.name) || user.id == currentUser?.id
+      (user) => chosenParticipants.includes(user.name) || user.id === creatorId
     );
 
-    const invitedIds = finalChosenUsers.map((user) => user.id);
-
-    console.log(invitedIds);
+    const invitedIds = finalChosenUsers
+      .filter((user) => user.id !== creatorId)
+      .map((user) => user.id);
 
     const { data: challengeData, error } = await supabase
       .from("challenges")
@@ -67,60 +69,74 @@ export default function Challenges() {
         {
           name: challengeName,
           goal: Number(challengeTotalReps),
-          creator: creator.user.id,
-          participants: [creator.user.id],
-          invited: invitedIds,
+          creator: creatorId,
+          participants: [creatorId], // Only creator is accepted initially
+          invited: invitedIds, // Everyone else is invited
         },
       ])
       .select()
       .single();
 
     if (error || !challengeData) {
-      console.error("Error creating challenge:", error);
+      console.error("❌ Error creating challenge:", error);
       return;
     }
 
-    for (const user of finalChosenUsers) {
-      if(user.id == creator.user.id){
-        const { error } = await supabase.from("challenges_progress").insert([
-          {
-            challenge_id: challengeData.id,
-            user_id: user.id,
-            username: user.name,
-            progress: 0,
-            goal: challengeData.goal,
-            name: challengeData.name,
-            status: "accepted"
-          },
-        ]);
-        if (error) {
-          console.error(`Error inserting progress for ${user.name}:`, error);
-        }
-      }else{
-        const { error } = await supabase.from("challenges_progress").insert([
-          {
-            challenge_id: challengeData.id,
-            user_id: user.id,
-            username: user.name,
-            progress: 0,
-            goal: challengeData.goal,
-            name: challengeData.name,
-          },
-        ]);
-        if (error) {
-          console.error(`Error inserting progress for ${user.name}:`, error);
-        }
-      }
-      
+    // Insert progress for creator with status "accepted"
+    const { error: creatorProgressError } = await supabase
+      .from("challenges_progress")
+      .insert([
+        {
+          challenge_id: challengeData.id,
+          user_id: creatorId,
+          username: currentUser?.username ?? "unknown",
+          progress: 0,
+          goal: challengeData.goal,
+          name: challengeData.name,
+          status: "accepted",
+        },
+      ]);
 
-      
+    if (creatorProgressError) {
+      console.error(
+        "❌ Error inserting creator progress:",
+        creatorProgressError
+      );
     }
 
+    // Insert progress for invited users (status can be undefined or "invited")
+    for (const user of finalChosenUsers) {
+      if (user.id === creatorId) continue;
+
+      const { error: invitedError } = await supabase
+        .from("challenges_progress")
+        .insert([
+          {
+            challenge_id: challengeData.id,
+            user_id: user.id,
+            username: user.name,
+            progress: 0,
+            goal: challengeData.goal,
+            name: challengeData.name,
+            status: "invited", // Optional, matches logic in hook
+          },
+        ]);
+
+      if (invitedError) {
+        console.error(
+          `❌ Error inserting progress for invited ${user.name}:`,
+          invitedError
+        );
+      }
+    }
+
+    // Reset state and reload
     setChallengeName("");
     setChallengeTotalReps("");
     setCreationModalOpen(false);
     await refetchChallenges();
   };
+
 
   return (
     <LinearGradient

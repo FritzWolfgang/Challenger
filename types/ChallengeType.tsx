@@ -8,5 +8,6 @@ export type ChallengeType = {
   goal: number;
   participants: UserType[];
   invited: UserType[];
+  status: string;
   expires_at: string | null;
 };
