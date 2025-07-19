@@ -75,7 +75,7 @@ export function useChallenges(userId?: string) {
       const fullInvited = (challenge.invited ?? [])
         .map((id: string) => usersMap.get(id))
         .filter(Boolean);
-
+ 
       return {
         id: challenge.id,
         name: challenge.name,

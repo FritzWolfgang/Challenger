@@ -57,7 +57,7 @@ export default function Index() {
           <View style={styles.container}>
             <Text style={styles.smallTextWhite}>Email</Text>
             <TextInput
-              style={[styles.textInput, { color: "black" }]}
+              style={[styles.textInput, { color: "black" }]}  
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
