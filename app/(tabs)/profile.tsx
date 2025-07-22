@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { AntDesign, Entypo, Feather } from "@expo/vector-icons";
+import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -82,7 +82,7 @@ const profile = () => {
             signOut();
           }}
         >
-          <Entypo name="log-out" size={28} color="#fff" />
+          <Ionicons name="log-out-outline" size={28} color="white" />
           <Text style={styles.smallText}>Sign out</Text>
         </Pressable>
       </View>
@@ -120,7 +120,17 @@ const profile = () => {
                 updateUsername(usernameInput);
               }}
             >
-              <Feather name="upload-cloud" size={30} color="black" style={{borderColor: "black", padding: 10,borderWidth: 1, borderRadius: 30}} />
+              <Feather
+                name="upload-cloud"
+                size={30}
+                color="black"
+                style={{
+                  borderColor: "black",
+                  padding: 10,
+                  borderWidth: 1,
+                  borderRadius: 30,
+                }}
+              />
             </Pressable>
           </View>
         </View>

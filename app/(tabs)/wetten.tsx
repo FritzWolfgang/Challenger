@@ -1,8 +1,11 @@
 import React from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
-import { router } from "expo-router";
-import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Entypo from "@expo/vector-icons/Entypo";
+import Feather from "@expo/vector-icons/Feather";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 
 
@@ -15,6 +18,15 @@ export default function Wetten() {
       style={styles.gradient}
     >
       <View style={{ flex: 1 }}>
+        <View style={{ marginTop: 50, gap: 20, alignItems: "center" }}>
+          <Text>Font Icons:</Text>
+          <AntDesign name="star" size={30} color="gold" />
+          <Entypo name="emoji-happy" size={30} color="purple" />
+          <Feather name="activity" size={30} color="green" />
+          <Ionicons name="home-outline" size={30} color="blue" />
+          <MaterialCommunityIcons name="sword-cross" size={30} color="red" />
+        </View>
+
         <Text style={[styles.title]}>Wetten</Text>
 
         <ScrollView

@@ -1,6 +1,7 @@
 // React & React Native
 import { useEffect, useState } from "react";
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 // Expo
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+
 
 // Supabase
 import { supabase } from "@/lib/supabase";

@@ -25,6 +25,7 @@
     },
     "web": {
       "bundler": "metro",
+      "assetBundlePatterns": ["**/*"],
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
