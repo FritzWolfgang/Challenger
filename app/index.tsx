@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import "expo-font";
 
 export default function Index() {
   const [email, setEmail] = useState("");
@@ -28,7 +29,7 @@ export default function Index() {
         Alert.alert("Login fehlgeschlagen!", error.message);
       } else {
         console.log("Login erfolgreich!");
-        router.replace("/(tabs)/home"); // <- redirect after login (see next section)
+        router.replace("/(tabs)/challenges"); // <- redirect after login (see next section)
       }
     } catch (err) {
       if (err instanceof Error) {
@@ -78,9 +79,9 @@ export default function Index() {
 
           {/* Log In Button */}
           <View
-            style={{ alignItems: "flex-start", marginTop: 50, marginLeft: 20 }}
+            style={styles.loginContainer}
           >
-            <View style={styles.container}></View>
+            
             <Pressable
               style={({ pressed }) => [
                 styles.button,
@@ -94,15 +95,14 @@ export default function Index() {
             </Pressable>
 
             {/* Sign In Text */}
-            <View style={styles.container}>
+            <View style={[{marginTop: 20}]}>
               <Pressable
-                style={{ marginTop: 20, marginLeft: 50 }}
                 onPress={() => {
                   router.push("/registration");
                 }}
               >
                 <Text style={styles.smallTextWhite}>
-                  {"New?  "}
+                  {"No account yet?  "}
                   <Text
                     style={{
                       color: "#13A2F4",
@@ -110,7 +110,7 @@ export default function Index() {
                       textDecorationLine: "underline",
                     }}
                   >
-                    Sign In
+                    Sign Up
                   </Text>
                 </Text>
               </Pressable>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
     fontFamily: "Gabarito",
-    marginLeft: 20, // Align title with left margin like profile screen
+    marginLeft: 10,
     marginBottom: 30,
   },
   container: {
@@ -136,13 +136,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 20, 
     width: "100%", 
   },
+  loginContainer: {
+    alignItems: "center",
+    marginTop: 50,
+  },
   button: {
     marginTop: 25,
-    width: "90%",
+    width: "50%",
     backgroundColor: "#2fb507",
     paddingVertical: 5,
     paddingHorizontal: 20,
-    borderRadius: 15,
+    borderRadius: 20,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

@@ -1,10 +1,10 @@
-import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
-import { ChallengeType } from "@/types/ChallengeType";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { ChallengeType } from "@/types/ChallengeType";
+import { AntDesign } from "@expo/vector-icons";
 import { router } from "expo-router";
+import React from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type PendingChallengesProps = {
   pendingChallenges: ChallengeType[];
@@ -22,8 +22,6 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
     progressId: string | null
   ) => {
     if (!user?.id) return;
-
-    let actualProgressId = progressId;
 
     if (!progressId) {
       // No progress row exists — create one
@@ -43,7 +41,6 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
         return;
       }
 
-      actualProgressId = newProgress.id;
     } else {
       // Update existing progress status
       const { error: progressError } = await supabase
@@ -69,7 +66,13 @@ const PendingChallengesView: React.FC<PendingChallengesProps> = ({
       return;
     }
 
-    const currentParticipants: string[] = challengeData?.participants ?? [];
+    const currentParticipants: string[] = Array.isArray(
+      challengeData?.participants
+    )
+      ? challengeData.participants.filter(
+          (participant): participant is string => typeof participant === "string"
+        )
+      : [];
     const updatedParticipants = currentParticipants.includes(user.id)
       ? currentParticipants
       : [...currentParticipants, user.id];

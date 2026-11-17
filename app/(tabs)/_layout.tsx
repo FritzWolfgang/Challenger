@@ -12,29 +12,11 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="home"
-        options={{
-          tabBarLabel: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="challenges"
         options={{
           tabBarLabel: "Challenges",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trophy-outline" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="wetten"
-        options={{
-          tabBarLabel: "Bets",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="hand-left-outline" color={color} size={size} />
           ),
         }}
       />

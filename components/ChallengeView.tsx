@@ -48,6 +48,7 @@ const ChallengeView: React.FC<ChallengeProps> = ({
       }
 
       setUserProgressMap(progressMap);
+      setIsLoading(false);
     };
 
     loadProgress();
@@ -154,9 +155,26 @@ const ChallengeView: React.FC<ChallengeProps> = ({
     return Math.ceil(diffMs / (1000 * 60 * 60 * 24)); // convert ms to days
   };
 
+  const [isLoading, setIsLoading] = useState(true);
+
+
 
   return (
     <View>
+
+      { isLoading &&
+          <Text style={{
+            textAlign: "center",
+            marginTop: 20,
+            color: "#000000",
+            fontSize: 25,
+            backgroundColor: "white",
+            borderRadius: 20,
+            padding: 10
+          }}>
+            Loading Challenges...
+          </Text>}
+
       {challenges.map((challenge, index) => {
         const progress = Math.min(challenge.progression / challenge.goal, 1);
         return (
@@ -261,6 +279,20 @@ const ChallengeView: React.FC<ChallengeProps> = ({
         );
       })}
 
+      {(challenges.length === 0 && !isLoading) &&
+          <Text style={{
+            textAlign: "center",
+            marginTop: 20,
+            color: "#000000",
+            fontSize: 25,
+            backgroundColor: "white",
+            borderRadius: 20,
+            padding: 10
+          }}>
+            You have no current challenges!
+          </Text>}
+
+
       <Modal isOpen={isProgressEditorOpen} title="Edit Progress">
         <View style={styles.inputWrapper}>
           <Text style={styles.inputLabel}>Enter new progress</Text>
@@ -316,7 +348,7 @@ const ChallengeView: React.FC<ChallengeProps> = ({
 
               if (numericValue > goal) {
                   numericValue = goal;
-                
+
               }
 
               const { error } = await supabase

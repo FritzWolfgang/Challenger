@@ -35,7 +35,7 @@ export const Modal = ({
           backgroundColor: "#FFFFFF",
           borderRadius: 20,
           borderColor: "black",
-          borderWidth: 3,
+          borderWidth: 2,
           paddingHorizontal: 20,
           paddingVertical: 30,
           width: "90%", 

@@ -57,7 +57,7 @@ export default function RootLayout() {
     }
 
     if (session && (pathname === "/" || pathname === "/registration")) {
-      router.replace("/(tabs)/home");
+      router.replace("/(tabs)/challenges");
     }
   }, [fontsLoaded, session, pathname]);
 

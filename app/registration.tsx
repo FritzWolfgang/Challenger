@@ -29,7 +29,7 @@ export default function Registration() {
     });
 
     if (session) {
-      router.replace("/(tabs)/home");
+      router.replace("/(tabs)/challenges");
     }
   }, [session]);
 
@@ -110,7 +110,7 @@ export default function Registration() {
 
           {/* Sign Up Button */}
           <View
-            style={{ alignItems: "flex-start", marginTop: 50, marginLeft: 20 }}
+            style={styles.signUpContainer}
           >
             <Pressable
               style={({ pressed }) => [
@@ -125,9 +125,8 @@ export default function Registration() {
             </Pressable>
 
             {/* Log In Text */}
-            <View style={styles.container}>
+            <View style={[{marginTop: 20}]}>
               <Pressable
-                style={{ marginTop: 20, marginLeft: 50 }}
                 onPress={() => router.push("/")}
               >
                 <Text style={styles.smallTextWhite}>
@@ -152,10 +151,11 @@ export default function Registration() {
 
 const styles = StyleSheet.create({
   title: {
-    fontFamily: "Gabarito",
-    fontSize: 50,
+    fontSize: 36,
+    fontWeight: "bold",
     color: "#fff",
-    marginLeft: 20,
+    fontFamily: "Gabarito",
+    marginLeft: 10, 
     marginBottom: 30,
   },
   container: {
@@ -164,13 +164,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     width: "100%",
   },
+  signUpContainer: {
+    alignItems: "center",
+    marginTop: 50,
+  },
   button: {
     marginTop: 25,
-    width: "90%",
+    width: "50%",
     backgroundColor: "#2fb507",
     paddingVertical: 5,
     paddingHorizontal: 20,
-    borderRadius: 15,
+    borderRadius: 20,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
